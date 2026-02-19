@@ -35,23 +35,32 @@ function openWizard(dialogService, products) {
     return new Promise((resolve) => {
         let _resolved = false;
         const safeResolve = (value) => {
-            if (!_resolved) { _resolved = true; resolve(value); }
+            if (!_resolved) {
+                _resolved = true;
+                LOG("safeResolve:", value.action);
+                resolve(value);
+            }
         };
+
         dialogService.add(
             ExtraProductsDialog,
             {
                 products,
-                onConfirm: (data) => { LOG("onConfirm", data.length); safeResolve({ action: "confirm", data }); },
-                onSkip:    ()     => { LOG("onSkip");                  safeResolve({ action: "skip" }); },
+                onConfirm: (data) => safeResolve({ action: "confirm", data }),
+                onSkip:    ()     => safeResolve({ action: "skip" }),
+                // Botón X del dialog — cancelar sin hacer nada
+                onDismiss: ()     => safeResolve({ action: "dismiss" }),
             },
             {
-                onClose: () => { LOG("onClose"); safeResolve({ action: "dismiss" }); },
+                // onClose del service NO lo usamos como señal —
+                // solo como fallback si el dialog se cierra de otra forma (Escape)
+                onClose: () => safeResolve({ action: "dismiss" }),
             }
         );
     });
 }
 
-// ─── Detectar si un clickParams/action es de tipo impresión ──────────────────
+// ─── Detectar si un action es de tipo impresión/reporte ──────────────────────
 function isPrintAction(params) {
     const name   = (params?.name   || params?.action?.name   || "").toString().toLowerCase();
     const type   = (params?.type   || params?.action?.type   || "").toString().toLowerCase();
@@ -160,7 +169,8 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
 
     } else {
-        LOG("dismiss → cancelando");
+        // dismiss = cerrar con X o Escape → cancelar la acción original
+        LOG("dismiss → cancelando acción original");
         return false;
     }
 }
@@ -229,8 +239,6 @@ patch(ActionMenus.prototype, {
     async onSelected(item) {
         LOG("ActionMenus.onSelected | item:", JSON.stringify(item).substring(0, 200));
 
-        // Solo interceptar si estamos en una sale.order
-        // El resModel lo obtenemos del prop context o del item
         const resModel = this.props?.context?.active_model || "";
         LOG("ActionMenus resModel:", resModel);
 
@@ -239,16 +247,15 @@ patch(ActionMenus.prototype, {
         }
 
         if (!isPrintAction(item)) {
-            LOG("ActionMenus: no es acción de impresión, pasando");
+            LOG("ActionMenus: no es impresión, pasando");
             return super.onSelected(item);
         }
 
-        // Obtener el recordId desde el contexto del prop
-        const activeId = this.props?.context?.active_id;
+        const activeId  = this.props?.context?.active_id;
         const activeIds = this.props?.context?.active_ids;
-        const recordId = activeId || (activeIds && activeIds[0]);
+        const recordId  = activeId || (activeIds && activeIds[0]);
 
-        LOG("ActionMenus: es impresión | recordId:", recordId);
+        LOG("ActionMenus: reporte detectado | recordId:", recordId);
 
         if (!recordId) {
             return super.onSelected(item);
@@ -263,7 +270,7 @@ patch(ActionMenus.prototype, {
         });
 
         if (!shouldContinue) {
-            LOG("ActionMenus: acción cancelada por dismiss");
+            LOG("ActionMenus: acción cancelada");
             return;
         }
 
