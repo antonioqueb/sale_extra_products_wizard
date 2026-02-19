@@ -4,61 +4,10 @@ import { patch } from "@web/core/utils/patch";
 import { FormController } from "@web/views/form/form_controller";
 import { ExtraProductsDialog } from "./extra_products_wizard";
 import { useService } from "@web/core/utils/hooks";
-import { App, useEnv } from "@odoo/owl";
+import { useEnv } from "@odoo/owl";
 
 const LOG = (...args) => console.log("%c[ExtraWizard]", "color:#0f3460;font-weight:bold", ...args);
 const ERR = (...args) => console.error("%c[ExtraWizard ERROR]", "color:red;font-weight:bold", ...args);
-
-// ─── Gestión del wizard montado ───────────────────────────────────────────────
-let _currentApp = null;
-let _currentContainer = null;
-
-function destroyWizard() {
-    if (_currentApp) {
-        try { _currentApp.destroy(); } catch (_) {}
-        _currentApp = null;
-    }
-    if (_currentContainer) {
-        try { _currentContainer.remove(); } catch (_) {}
-        _currentContainer = null;
-    }
-}
-
-async function openWizard(env, products) {
-    destroyWizard();
-    LOG("openWizard() llamado con", products.length, "productos");
-
-    return new Promise((resolve) => {
-        const container = document.createElement("div");
-        container.id = "o_extra_products_wizard_root";
-        document.body.appendChild(container);
-        _currentContainer = container;
-        LOG("Container montado en body:", container);
-
-        const app = new App(ExtraProductsDialog, {
-            env,
-            props: {
-                products,
-                onConfirm: (data) => { destroyWizard(); resolve({ action: "confirm", data }); },
-                onSkip:    ()     => { destroyWizard(); resolve({ action: "skip" }); },
-                onDismiss: ()     => { destroyWizard(); resolve({ action: "dismiss" }); },
-            },
-        });
-
-        _currentApp = app;
-        LOG("App OWL creada, iniciando mount()...");
-
-        app.mount(container)
-            .then(() => {
-                LOG("✅ App montada correctamente en el DOM");
-            })
-            .catch((err) => {
-                ERR("mount() falló:", err);
-                destroyWizard();
-                resolve({ action: "skip" });
-            });
-    });
-}
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function showToast(message, type = "success", duration = 3000) {
@@ -79,11 +28,49 @@ function showToast(message, type = "success", duration = 3000) {
 // ─── Órdenes ya procesadas en esta sesión ────────────────────────────────────
 const _processedOrders = new Set();
 
+// ─── Abrir wizard via dialog service (forma correcta en Odoo 19) ─────────────
+function openWizard(dialogService, products) {
+    LOG("openWizard() via dialog service con", products.length, "productos");
+
+    return new Promise((resolve) => {
+        let _resolved = false;
+
+        const safeResolve = (value) => {
+            if (!_resolved) {
+                _resolved = true;
+                resolve(value);
+            }
+        };
+
+        dialogService.add(
+            ExtraProductsDialog,
+            {
+                products,
+                onConfirm: (data) => {
+                    LOG("onConfirm llamado con", data);
+                    safeResolve({ action: "confirm", data });
+                },
+                onSkip: () => {
+                    LOG("onSkip llamado");
+                    safeResolve({ action: "skip" });
+                },
+            },
+            {
+                // onClose se llama cuando el dialog se cierra (incluyendo X / Escape)
+                // Si ya resolvió via confirm/skip, este dismiss no hace nada
+                onClose: () => {
+                    LOG("onClose del dialog service");
+                    safeResolve({ action: "dismiss" });
+                },
+            }
+        );
+    });
+}
+
 // ─── Lógica central ───────────────────────────────────────────────────────────
-async function runExtraProductsWizard({ orm, env, recordId, triggerType, reloadFn }) {
+async function runExtraProductsWizard({ orm, dialogService, recordId, triggerType, reloadFn }) {
     LOG("─── runExtraProductsWizard START ───");
     LOG("recordId:", recordId, "| triggerType:", triggerType);
-    LOG("_processedOrders:", [..._processedOrders]);
 
     if (_processedOrders.has(recordId)) {
         LOG("⏭ Ya procesado en esta sesión, skip");
@@ -102,42 +89,30 @@ async function runExtraProductsWizard({ orm, env, recordId, triggerType, reloadF
         return true;
     }
 
-    if (!config) {
-        ERR("Config es null/undefined");
+    if (!config || !config.enabled) {
+        LOG("⏭ Config nula o módulo desactivado");
         return true;
     }
-    if (!config.enabled) {
-        LOG("⏭ Módulo desactivado en configuración (enabled=false)");
-        return true;
-    }
-    if (config.has_extra_products) {
-        LOG("⏭ La orden ya tiene productos adicionales");
-        _processedOrders.add(recordId);
-        return true;
-    }
-    if (config.extra_products_dismissed) {
-        LOG("⏭ Pop-up ya fue descartado para esta orden");
+    if (config.has_extra_products || config.extra_products_dismissed) {
+        LOG("⏭ Ya tiene adicionales o fue descartado");
         _processedOrders.add(recordId);
         return true;
     }
 
     const shouldTrigger = triggerType === "confirm" ? config.trigger_confirm : config.trigger_print;
-    LOG("shouldTrigger:", shouldTrigger, "| trigger_confirm:", config.trigger_confirm, "| trigger_print:", config.trigger_print);
     if (!shouldTrigger) {
-        LOG("⏭ El trigger no está activo para este tipo de acción");
+        LOG("⏭ Trigger no activo para:", triggerType);
         return true;
     }
 
-    LOG("order_state:", config.order_state);
     if (!["draft", "sent"].includes(config.order_state)) {
-        LOG("⏭ Estado de orden no aplica:", config.order_state);
+        LOG("⏭ Estado no aplica:", config.order_state);
         _processedOrders.add(recordId);
         return true;
     }
 
-    LOG("category_ids configuradas:", config.category_ids);
     if (!config.category_ids || config.category_ids.length === 0) {
-        LOG("⚠ No hay categorías configuradas en Ajustes. Ve a Ajustes > Ventas > Productos Adicionales y selecciona categorías.");
+        LOG("⚠ Sin categorías configuradas en Ajustes > Ventas > Productos Adicionales");
         _processedOrders.add(recordId);
         return true;
     }
@@ -154,18 +129,17 @@ async function runExtraProductsWizard({ orm, env, recordId, triggerType, reloadF
     }
 
     if (!products || products.length === 0) {
-        LOG("⚠ No hay productos en las categorías configuradas. Verifica que los productos tengan 'sale_ok=True' y estén en las categorías correctas.");
+        LOG("⚠ Sin productos en las categorías configuradas");
         _processedOrders.add(recordId);
         return true;
     }
 
     // 3. Abrir wizard
-    LOG("3. Abriendo wizard con", products.length, "productos...");
-    const result = await openWizard(env, products);
+    LOG("3. Abriendo wizard...");
+    const result = await openWizard(dialogService, products);
     LOG("Resultado del wizard:", result.action);
 
     if (result.action === "confirm") {
-        LOG("4. Agregando productos:", result.data);
         try {
             await orm.call("sale.order", "action_add_extra_products", [[recordId], result.data]);
             _processedOrders.add(recordId);
@@ -186,6 +160,7 @@ async function runExtraProductsWizard({ orm, env, recordId, triggerType, reloadF
         return true;
 
     } else {
+        // dismiss → cancelar la acción original
         LOG("dismiss → cancelando acción original");
         return false;
     }
@@ -198,33 +173,25 @@ patch(FormController.prototype, {
     setup() {
         super.setup(...arguments);
         this._epOrm = useService("orm");
+        this._epDialog = useService("dialog");
         this._epEnv = useEnv();
-        // Este log aparece CADA VEZ que se crea una instancia de FormController
-        // Si nunca aparece, el patch no está siendo cargado
-        LOG("FormController.setup() — patch activo");
+        LOG("FormController.setup() — patch activo, dialog service:", !!this._epDialog);
     },
 
     async beforeExecuteActionButton(clickParams) {
         const resModel = this.model?.root?.resModel;
-        LOG("beforeExecuteActionButton llamado | resModel:", resModel, "| clickParams:", JSON.stringify(clickParams));
-
         if (resModel !== "sale.order") {
-            LOG("⏭ No es sale.order, pasando al handler original");
             return super.beforeExecuteActionButton?.(clickParams) ?? true;
         }
 
         const recordId = this.model?.root?.resId;
-        LOG("recordId:", recordId);
-        if (!recordId) {
-            LOG("⚠ Sin recordId, pasando al handler original");
-            return super.beforeExecuteActionButton?.(clickParams) ?? true;
-        }
+        if (!recordId) return super.beforeExecuteActionButton?.(clickParams) ?? true;
 
         const btnName   = (clickParams?.name   || "").toLowerCase();
         const btnType   = (clickParams?.type   || "").toLowerCase();
         const btnString = (clickParams?.string || "").toLowerCase();
 
-        LOG("Botón detectado → name:", btnName, "| type:", btnType, "| string:", btnString);
+        LOG("beforeExecuteActionButton | name:", btnName, "| type:", btnType, "| string:", btnString);
 
         const isConfirm = btnName === "action_confirm";
         const isPrint = (
@@ -240,10 +207,7 @@ patch(FormController.prototype, {
             btnString.includes("correo")
         );
 
-        LOG("isConfirm:", isConfirm, "| isPrint:", isPrint);
-
         if (!isConfirm && !isPrint) {
-            LOG("⏭ Botón no es Confirmar ni Imprimir, pasando al handler original");
             return super.beforeExecuteActionButton?.(clickParams) ?? true;
         }
 
@@ -251,7 +215,7 @@ patch(FormController.prototype, {
 
         const shouldContinue = await runExtraProductsWizard({
             orm: this._epOrm,
-            env: this._epEnv,
+            dialogService: this._epDialog,
             recordId,
             triggerType,
             reloadFn: async () => {
@@ -260,10 +224,9 @@ patch(FormController.prototype, {
             },
         });
 
-        LOG("shouldContinue:", shouldContinue);
         if (!shouldContinue) return false;
         return super.beforeExecuteActionButton?.(clickParams) ?? true;
     },
 });
 
-LOG("✅ Patch registrado. Si ves este mensaje, el archivo JS fue cargado correctamente.");
+LOG("✅ Patch registrado.");

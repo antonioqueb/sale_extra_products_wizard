@@ -1,15 +1,17 @@
 /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
+import { Dialog } from "@web/core/dialog/dialog";
 
 export class ExtraProductsDialog extends Component {
     static template = "sale_extra_products_wizard.ExtraProductsDialog";
+    static components = { Dialog };
 
     static props = {
         products: { type: Array },
         onConfirm: { type: Function },
         onSkip: { type: Function },
-        onDismiss: { type: Function },
+        close: { type: Function },  // Inyectado por el dialog service
     };
 
     setup() {
@@ -132,8 +134,16 @@ export class ExtraProductsDialog extends Component {
             }
         }
         this.props.onConfirm(productsToAdd);
+        this.props.close();
     }
 
-    onSkip() { this.props.onSkip(); }
-    onDismiss() { this.props.onDismiss(); }
+    onSkip() {
+        this.props.onSkip();
+        this.props.close();
+    }
+
+    onDismiss() {
+        // Cierra sin acción — la Promise resolverá "dismiss" via onClose del dialog service
+        this.props.close();
+    }
 }
