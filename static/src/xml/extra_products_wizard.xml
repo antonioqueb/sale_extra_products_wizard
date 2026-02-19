@@ -13,16 +13,6 @@
                         <p>Complementa esta orden con nuestros productos de instalación y cuidado</p>
                     </div>
                 </div>
-                <!-- Indicador de countdown -->
-                <div class="o_ep_idle_indicator" t-if="!state.idleUnlocked">
-                    <div class="o_ep_idle_ring">
-                        <span class="o_ep_idle_count" t-esc="state.idleCountdown"/>
-                    </div>
-                    <span class="o_ep_idle_label">Revisa los productos</span>
-                </div>
-                <div class="o_ep_idle_ready" t-else="">
-                    <span>✓ Listo para seleccionar</span>
-                </div>
             </div>
 
             <!-- ── Tabs de categorías ────────────────────────── -->
@@ -46,12 +36,6 @@
                 </t>
             </div>
 
-            <!-- ── Banner bloqueado ──────────────────────────── -->
-            <div class="o_ep_locked_banner" t-if="!state.idleUnlocked">
-                <span class="o_ep_locked_icon">👀</span>
-                <span>Revisa los productos — podrás seleccionar en <strong t-esc="state.idleCountdown"/> segundo(s)</span>
-            </div>
-
             <!-- ── Grid de productos ─────────────────────────── -->
             <div class="o_ep_products_body">
                 <t t-if="filteredProducts.length === 0">
@@ -66,8 +50,7 @@
                             class="o_ep_product_card"
                             t-att-class="{
                                 selected: isSelected(product.id),
-                                already_in_order: product.already_in_order,
-                                locked: !state.idleUnlocked
+                                already_in_order: product.already_in_order
                             }"
                             t-on-click="() => this.toggleProduct(product)"
                         >
@@ -130,12 +113,7 @@
             <!-- ── Acciones ──────────────────────────────────── -->
             <div class="o_ep_action_bar">
                 <div class="o_ep_action_hint" t-if="selectedCount === 0">
-                    <t t-if="!state.idleUnlocked">
-                        Espera <strong t-esc="state.idleCountdown"/>s o mueve el mouse para seleccionar →
-                    </t>
-                    <t t-else="">
-                        Selecciona productos o elige una opción →
-                    </t>
+                    Selecciona productos o elige una opción →
                 </div>
                 <button class="o_ep_btn o_ep_btn_skip" t-on-click="onSkip">
                     <span class="o_ep_btn_icon">→</span>
@@ -143,14 +121,10 @@
                 </button>
                 <button
                     class="o_ep_btn o_ep_btn_add"
-                    t-att-disabled="(selectedCount === 0 || !state.idleUnlocked) ? true : undefined"
+                    t-att-disabled="selectedCount === 0 ? true : undefined"
                     t-on-click="onConfirm"
                 >
-                    <t t-if="!state.idleUnlocked">
-                        <span class="o_ep_btn_icon">⏳</span>
-                        Selecciona en <t t-esc="state.idleCountdown"/>s...
-                    </t>
-                    <t t-elif="selectedCount > 0">
+                    <t t-if="selectedCount > 0">
                         <span class="o_ep_btn_icon">✓</span>
                         Agregar <t t-esc="selectedCount"/> producto(s) a la orden
                     </t>

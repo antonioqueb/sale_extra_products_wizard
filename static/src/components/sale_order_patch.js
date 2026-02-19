@@ -4,7 +4,7 @@ import { patch } from "@web/core/utils/patch";
 import { FormController } from "@web/views/form/form_controller";
 import { ExtraProductsDialog } from "./extra_products_wizard";
 import { useService } from "@web/core/utils/hooks";
-import { useEnv } from "@odoo/owl";
+import { useEnv, onMounted, onWillUnmount } from "@odoo/owl";
 import { ActionMenus } from "@web/search/action_menus/action_menus";
 
 const LOG = (...args) => console.log("%c[ExtraWizard]", "color:#0f3460;font-weight:bold", ...args);
@@ -41,7 +41,6 @@ function openWizard(dialogService, products) {
                 resolve(value);
             }
         };
-
         dialogService.add(
             ExtraProductsDialog,
             {
@@ -112,7 +111,12 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
     }
 
-    const shouldTrigger = triggerType === "confirm" ? config.trigger_confirm : config.trigger_print;
+    const shouldTrigger = triggerType === "confirm"
+        ? config.trigger_confirm
+        : triggerType === "print"
+            ? config.trigger_print
+            : config.enabled; // "idle" siempre pasa si está habilitado
+
     if (!shouldTrigger) { LOG("⏭ Trigger inactivo:", triggerType); return true; }
 
     if (!["draft", "sent"].includes(config.order_state)) {
@@ -167,12 +171,15 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
 
     } else {
-        LOG("dismiss → cancelando acción original");
+        // dismiss = X o Escape
+        LOG("dismiss");
         return false;
     }
 }
 
 // ─── PATCH FormController ─────────────────────────────────────────────────────
+const IDLE_TIMEOUT_MS = 10000; // 10 segundos sin actividad
+
 LOG("🔌 Registrando patch FormController...");
 
 patch(FormController.prototype, {
@@ -181,9 +188,87 @@ patch(FormController.prototype, {
         this._epOrm    = useService("orm");
         this._epDialog = useService("dialog");
         this._epEnv    = useEnv();
+
+        // ── Timer de inactividad ──────────────────────────────────────────────
+        this._epIdleTimer    = null;
+        this._epIdleRunning  = false; // true mientras el wizard de inactividad está abierto
+
+        // Arrancar el timer de inactividad solo en sale.order
+        onMounted(() => {
+            if (this.model?.root?.resModel === "sale.order") {
+                LOG("FormController montado en sale.order — iniciando idle timer");
+                this._epResetIdleTimer();
+
+                // Cualquier input/click/keydown reinicia el timer
+                this._epActivityHandler = () => this._epResetIdleTimer();
+                document.addEventListener("mousemove",  this._epActivityHandler, { passive: true });
+                document.addEventListener("keydown",    this._epActivityHandler, { passive: true });
+                document.addEventListener("mousedown",  this._epActivityHandler, { passive: true });
+                document.addEventListener("touchstart", this._epActivityHandler, { passive: true });
+            }
+        });
+
+        onWillUnmount(() => {
+            this._epClearIdleTimer();
+            if (this._epActivityHandler) {
+                document.removeEventListener("mousemove",  this._epActivityHandler);
+                document.removeEventListener("keydown",    this._epActivityHandler);
+                document.removeEventListener("mousedown",  this._epActivityHandler);
+                document.removeEventListener("touchstart", this._epActivityHandler);
+            }
+        });
+
         LOG("FormController.setup() activo");
     },
 
+    _epClearIdleTimer() {
+        if (this._epIdleTimer) {
+            clearTimeout(this._epIdleTimer);
+            this._epIdleTimer = null;
+        }
+    },
+
+    _epResetIdleTimer() {
+        // No reiniciar si el wizard ya está abierto
+        if (this._epIdleRunning) return;
+
+        this._epClearIdleTimer();
+
+        const resModel  = this.model?.root?.resModel;
+        const recordId  = this.model?.root?.resId;
+
+        if (resModel !== "sale.order" || !recordId) return;
+
+        this._epIdleTimer = setTimeout(async () => {
+            LOG("⏱ Inactividad detectada — abriendo wizard | recordId:", recordId);
+
+            // Verificar que el registro sigue siendo el mismo y no está procesado
+            const currentRecordId = this.model?.root?.resId;
+            if (currentRecordId !== recordId) return;
+            if (_processedOrders.has(recordId)) return;
+
+            this._epIdleRunning = true;
+            this._epClearIdleTimer();
+
+            await runExtraProductsWizard({
+                orm:           this._epOrm,
+                dialogService: this._epDialog,
+                recordId,
+                triggerType:   "idle",
+                reloadFn: async () => {
+                    await this.model.root.load();
+                    this.render(true);
+                },
+            });
+
+            this._epIdleRunning = false;
+            // Reiniciar el timer después de que el wizard se cierre
+            this._epResetIdleTimer();
+
+        }, IDLE_TIMEOUT_MS);
+    },
+
+    // ── Intercepta botones normales del header (Confirmar, Imprimir directo) ──
     async beforeExecuteActionButton(clickParams) {
         const resModel = this.model?.root?.resModel;
         if (resModel !== "sale.order") {
@@ -205,6 +290,9 @@ patch(FormController.prototype, {
             return super.beforeExecuteActionButton?.(clickParams) ?? true;
         }
 
+        // Parar el idle timer mientras se ejecuta una acción manual
+        this._epClearIdleTimer();
+
         const triggerType = isConfirm ? "confirm" : "print";
 
         const shouldContinue = await runExtraProductsWizard({
@@ -218,13 +306,15 @@ patch(FormController.prototype, {
             },
         });
 
+        // Reanudar el timer
+        this._epResetIdleTimer();
+
         if (!shouldContinue) return false;
         return super.beforeExecuteActionButton?.(clickParams) ?? true;
     },
 });
 
 // ─── PATCH ActionMenus — intercepta el engrane ───────────────────────────────
-// En Odoo 19 el método que se llama es executeAction, no onSelected
 LOG("🔌 Registrando patch ActionMenus...");
 
 patch(ActionMenus.prototype, {
@@ -239,14 +329,12 @@ patch(ActionMenus.prototype, {
         LOG("ActionMenus.executeAction | action:", JSON.stringify(action).substring(0, 200));
 
         const resModel = this.props?.context?.active_model || "";
-        LOG("ActionMenus resModel:", resModel);
 
         if (resModel !== "sale.order") {
             return super.executeAction(action);
         }
 
         if (!isPrintAction(action)) {
-            LOG("ActionMenus: no es impresión, pasando");
             return super.executeAction(action);
         }
 
