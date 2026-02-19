@@ -5,6 +5,7 @@ import { FormController } from "@web/views/form/form_controller";
 import { ExtraProductsDialog } from "./extra_products_wizard";
 import { useService } from "@web/core/utils/hooks";
 import { useEnv } from "@odoo/owl";
+import { actionService } from "@web/core/action_manager/action_service";
 
 const LOG = (...args) => console.log("%c[ExtraWizard]", "color:#0f3460;font-weight:bold", ...args);
 const ERR = (...args) => console.error("%c[ExtraWizard ERROR]", "color:red;font-weight:bold", ...args);
@@ -28,15 +29,21 @@ function showToast(message, type = "success", duration = 3000) {
 // ─── Órdenes ya procesadas en esta sesión ────────────────────────────────────
 const _processedOrders = new Set();
 
-// ─── Abrir wizard via dialog service ─────────────────────────────────────────
-function openWizard(dialogService, products) {
+// ─── Referencia al dialog service (se asigna desde el FormController) ────────
+let _dialogService = null;
+let _ormService = null;
+
+// ─── Abrir wizard ─────────────────────────────────────────────────────────────
+function openWizard(products) {
+    if (!_dialogService) return Promise.resolve({ action: "skip" });
     LOG("openWizard() con", products.length, "productos");
+
     return new Promise((resolve) => {
         let _resolved = false;
         const safeResolve = (value) => {
             if (!_resolved) { _resolved = true; resolve(value); }
         };
-        dialogService.add(
+        _dialogService.add(
             ExtraProductsDialog,
             {
                 products,
@@ -50,54 +57,80 @@ function openWizard(dialogService, products) {
     });
 }
 
-// ─── Detectar si un clickParams/action es de tipo impresión ──────────────────
-function isPrintAction(params) {
-    const name   = (params?.name   || params?.action?.name   || "").toString().toLowerCase();
-    const type   = (params?.type   || params?.action?.type   || "").toString().toLowerCase();
-    const tag    = (params?.tag    || params?.action?.tag    || "").toString().toLowerCase();
-    const string = (params?.string || "").toString().toLowerCase();
-    const resModel = (params?.res_model || params?.action?.res_model || "").toString().toLowerCase();
+// ─── Detectar acción de impresión/reporte ────────────────────────────────────
+function isReportAction(action) {
+    if (!action) return false;
 
-    // Tipo explícito de reporte
+    const type = (
+        action.type ||
+        action?.action?.type ||
+        ""
+    ).toString().toLowerCase();
+
+    const name = (
+        action.name ||
+        action?.action?.name ||
+        action.xml_id ||
+        ""
+    ).toString().toLowerCase();
+
+    const tag = (action.tag || action?.action?.tag || "").toString().toLowerCase();
+
+    // Tipo nativo de reporte de Odoo
     if (type === "ir.actions.report") return true;
 
-    // Tag de cliente para reportes
+    // Tag del cliente web para reportes
     if (tag === "action_report") return true;
 
-    // Tipo action con nombre que sugiere impresión
-    if (type === "action" && (
-        name.includes("report") ||
-        name.includes("print") ||
-        name.includes("preview") ||
-        name.includes("saleorder") ||
-        name.includes("sale_order")
-    )) return true;
-
-    // String del botón en UI
+    // Nombres que incluyen patrones de reporte de sale.order
     if (
-        string.includes("imprimir") ||
-        string.includes("print") ||
-        string.includes("enviar") ||
-        string.includes("send") ||
-        string.includes("email") ||
-        string.includes("correo")
+        name.includes("report") ||
+        name.includes("saleorder") ||
+        name.includes("sale_order") ||
+        name.includes("quotation") ||
+        name.includes("proforma")
     ) return true;
 
     return false;
 }
 
+// ─── Obtener el recordId activo desde el controlador activo ──────────────────
+function getActiveSaleOrderId() {
+    // Buscar en el DOM el componente OWL activo de tipo FormController en sale.order
+    try {
+        const formView = document.querySelector(".o_form_view");
+        if (!formView) return null;
+
+        // Recorrer el árbol OWL buscando el FormController de sale.order
+        let node = formView.__owl__;
+        while (node) {
+            const comp = node.component;
+            if (comp && comp.model?.root?.resModel === "sale.order") {
+                return comp.model?.root?.resId || null;
+            }
+            node = node.parent;
+        }
+    } catch (_) {}
+    return null;
+}
+
 // ─── Lógica central ───────────────────────────────────────────────────────────
-async function runExtraProductsWizard({ orm, dialogService, recordId, triggerType, reloadFn }) {
+async function runExtraProductsWizard({ recordId, triggerType, reloadFn }) {
     LOG("START | recordId:", recordId, "| trigger:", triggerType);
 
-    if (_processedOrders.has(recordId)) {
-        LOG("⏭ Ya procesado en esta sesión");
+    if (!recordId || _processedOrders.has(recordId)) {
+        LOG("⏭ Sin recordId o ya procesado");
+        return true;
+    }
+
+    if (!_ormService) {
+        LOG("⚠ ORM service no disponible");
         return true;
     }
 
     let config;
     try {
-        const result = await orm.call("sale.order", "get_extra_products_config", [[recordId]]);
+        const result = await _ormService.call("sale.order", "get_extra_products_config", [[recordId]]);
         config = Array.isArray(result) ? result[0] : result;
         LOG("Config:", JSON.stringify(config, null, 2));
     } catch (e) {
@@ -122,14 +155,14 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
     }
 
     if (!config.category_ids || config.category_ids.length === 0) {
-        LOG("⚠ Sin categorías en Ajustes > Ventas > Productos Adicionales");
+        LOG("⚠ Sin categorías configuradas");
         _processedOrders.add(recordId);
         return true;
     }
 
     let products;
     try {
-        products = await orm.call("sale.order", "get_suggested_extra_products", [[recordId]]);
+        products = await _ormService.call("sale.order", "get_suggested_extra_products", [[recordId]]);
         LOG("Productos:", products?.length);
     } catch (e) {
         ERR("get_suggested_extra_products falló:", e);
@@ -143,14 +176,14 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
     }
 
     LOG("Abriendo wizard...");
-    const result = await openWizard(dialogService, products);
+    const result = await openWizard(products);
     LOG("Resultado:", result.action);
 
     if (result.action === "confirm") {
         try {
-            await orm.call("sale.order", "action_add_extra_products", [[recordId], result.data]);
+            await _ormService.call("sale.order", "action_add_extra_products", [[recordId], result.data]);
             _processedOrders.add(recordId);
-            await reloadFn();
+            if (reloadFn) await reloadFn();
             showToast(`${result.data.length} producto(s) adicional(es) agregado(s) ✨`, "success", 3500);
             LOG("✅ OK");
         } catch (e) {
@@ -160,7 +193,7 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
 
     } else if (result.action === "skip") {
         try {
-            await orm.call("sale.order", "action_dismiss_extra_products_wizard", [[recordId]]);
+            await _ormService.call("sale.order", "action_dismiss_extra_products_wizard", [[recordId]]);
             _processedOrders.add(recordId);
         } catch (_) {}
         showToast("Continuando sin productos adicionales", "info", 2000);
@@ -172,20 +205,62 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
     }
 }
 
-// ─── PATCH FormController ─────────────────────────────────────────────────────
-LOG("🔌 Registrando patch...");
+// ─── PATCH al actionService — intercepta TODOS los doAction del sistema ───────
+patch(actionService, {
+    async start(env, services) {
+        const result = await super.start(env, services);
+
+        // Guardar referencia al orm desde el env
+        _ormService = services.orm;
+
+        const originalDoAction = result.doAction.bind(result);
+
+        result.doAction = async function(action, options) {
+            LOG("actionService.doAction interceptado:", JSON.stringify(action).substring(0, 150));
+
+            if (isReportAction(action)) {
+                // Obtener el recordId del formulario activo
+                const recordId = getActiveSaleOrderId();
+                LOG("Es reporte | recordId desde DOM:", recordId);
+
+                if (recordId) {
+                    const shouldContinue = await runExtraProductsWizard({
+                        recordId,
+                        triggerType: "print",
+                        reloadFn: null, // No recargar al imprimir, solo agregar
+                    });
+
+                    if (!shouldContinue) {
+                        LOG("Acción de reporte cancelada por dismiss");
+                        return;
+                    }
+                }
+            }
+
+            return originalDoAction(action, options);
+        };
+
+        return result;
+    }
+});
+
+// ─── PATCH FormController — captura servicios y botón Confirmar ───────────────
+LOG("🔌 Registrando patch FormController...");
 
 patch(FormController.prototype, {
     setup() {
         super.setup(...arguments);
-        this._epOrm      = useService("orm");
-        this._epDialog   = useService("dialog");
-        this._epAction   = useService("action");
-        this._epEnv      = useEnv();
-        LOG("FormController.setup() activo");
+        this._epOrm    = useService("orm");
+        this._epDialog = useService("dialog");
+        this._epEnv    = useEnv();
+
+        // Exponer servicios globalmente para el patch del actionService
+        _dialogService = this._epDialog;
+        _ormService    = this._epOrm;
+
+        LOG("FormController.setup() — servicios capturados");
     },
 
-    // ── Intercepta botones normales del header (Confirmar, Imprimir directo) ──
     async beforeExecuteActionButton(clickParams) {
         const resModel = this.model?.root?.resModel;
         if (resModel !== "sale.order") {
@@ -197,11 +272,21 @@ patch(FormController.prototype, {
 
         const btnName   = (clickParams?.name   || "").toLowerCase();
         const btnString = (clickParams?.string || "").toLowerCase();
+        const btnType   = (clickParams?.type   || "").toLowerCase();
 
-        LOG("beforeExecuteActionButton | name:", btnName, "| type:", clickParams?.type, "| string:", btnString);
+        LOG("beforeExecuteActionButton | name:", btnName, "| type:", btnType, "| string:", btnString);
 
         const isConfirm = btnName === "action_confirm";
-        const isPrint   = isPrintAction({ ...clickParams, string: btnString });
+
+        // Para imprimir desde botón directo del header
+        const isPrint = isReportAction(clickParams) || (
+            btnType === "action" && (
+                btnName.includes("report") ||
+                btnName.includes("saleorder") ||
+                btnName.includes("print") ||
+                btnName.includes("preview")
+            )
+        ) || btnString.includes("imprimir") || btnString.includes("enviar");
 
         if (!isConfirm && !isPrint) {
             return super.beforeExecuteActionButton?.(clickParams) ?? true;
@@ -210,8 +295,6 @@ patch(FormController.prototype, {
         const triggerType = isConfirm ? "confirm" : "print";
 
         const shouldContinue = await runExtraProductsWizard({
-            orm:           this._epOrm,
-            dialogService: this._epDialog,
             recordId,
             triggerType,
             reloadFn: async () => {
@@ -222,60 +305,6 @@ patch(FormController.prototype, {
 
         if (!shouldContinue) return false;
         return super.beforeExecuteActionButton?.(clickParams) ?? true;
-    },
-
-    // ── Intercepta el engrane (ActionMenus) — ejecuta acciones via doAction ──
-    async _executeAction(action, options) {
-        const resModel = this.model?.root?.resModel;
-
-        if (resModel === "sale.order" && isPrintAction({ action })) {
-            const recordId = this.model?.root?.resId;
-            LOG("_executeAction interceptado | recordId:", recordId, "| action:", JSON.stringify(action).substring(0, 120));
-
-            if (recordId) {
-                const shouldContinue = await runExtraProductsWizard({
-                    orm:           this._epOrm,
-                    dialogService: this._epDialog,
-                    recordId,
-                    triggerType:   "print",
-                    reloadFn: async () => {
-                        await this.model.root.load();
-                        this.render(true);
-                    },
-                });
-
-                if (!shouldContinue) return;
-            }
-        }
-
-        return super._executeAction?.(action, options);
-    },
-
-    // ── Intercepta llamadas directas a doAction (usado por ActionMenus) ───────
-    async doAction(action, options) {
-        const resModel = this.model?.root?.resModel;
-
-        if (resModel === "sale.order" && isPrintAction({ action })) {
-            const recordId = this.model?.root?.resId;
-            LOG("doAction interceptado | recordId:", recordId, "| action:", JSON.stringify(action).substring(0, 120));
-
-            if (recordId) {
-                const shouldContinue = await runExtraProductsWizard({
-                    orm:           this._epOrm,
-                    dialogService: this._epDialog,
-                    recordId,
-                    triggerType:   "print",
-                    reloadFn: async () => {
-                        await this.model.root.load();
-                        this.render(true);
-                    },
-                });
-
-                if (!shouldContinue) return;
-            }
-        }
-
-        return super.doAction?.(action, options);
     },
 });
 
