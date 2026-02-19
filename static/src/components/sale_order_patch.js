@@ -28,7 +28,7 @@ function showToast(message, type = "success", duration = 3000) {
 // ─── Órdenes ya procesadas en esta sesión ────────────────────────────────────
 const _processedOrders = new Set();
 
-// ─── Abrir wizard via dialog service (forma correcta en Odoo 19) ─────────────
+// ─── Abrir wizard via dialog service ─────────────────────────────────────────
 function openWizard(dialogService, products) {
     LOG("openWizard() via dialog service con", products.length, "productos");
 
@@ -47,19 +47,17 @@ function openWizard(dialogService, products) {
             {
                 products,
                 onConfirm: (data) => {
-                    LOG("onConfirm llamado con", data);
+                    LOG("onConfirm con", data.length, "productos");
                     safeResolve({ action: "confirm", data });
                 },
                 onSkip: () => {
-                    LOG("onSkip llamado");
+                    LOG("onSkip");
                     safeResolve({ action: "skip" });
                 },
             },
             {
-                // onClose se llama cuando el dialog se cierra (incluyendo X / Escape)
-                // Si ya resolvió via confirm/skip, este dismiss no hace nada
                 onClose: () => {
-                    LOG("onClose del dialog service");
+                    LOG("onClose del dialog");
                     safeResolve({ action: "dismiss" });
                 },
             }
@@ -69,41 +67,33 @@ function openWizard(dialogService, products) {
 
 // ─── Lógica central ───────────────────────────────────────────────────────────
 async function runExtraProductsWizard({ orm, dialogService, recordId, triggerType, reloadFn }) {
-    LOG("─── runExtraProductsWizard START ───");
-    LOG("recordId:", recordId, "| triggerType:", triggerType);
+    LOG("─── runExtraProductsWizard START | recordId:", recordId, "| trigger:", triggerType);
 
     if (_processedOrders.has(recordId)) {
-        LOG("⏭ Ya procesado en esta sesión, skip");
+        LOG("⏭ Ya procesado en esta sesión");
         return true;
     }
 
     // 1. Config
-    LOG("1. Llamando get_extra_products_config...");
     let config;
     try {
         const result = await orm.call("sale.order", "get_extra_products_config", [[recordId]]);
         config = Array.isArray(result) ? result[0] : result;
-        LOG("Config recibida:", JSON.stringify(config, null, 2));
+        LOG("Config:", JSON.stringify(config, null, 2));
     } catch (e) {
         ERR("get_extra_products_config falló:", e);
         return true;
     }
 
-    if (!config || !config.enabled) {
-        LOG("⏭ Config nula o módulo desactivado");
-        return true;
-    }
+    if (!config || !config.enabled) { LOG("⏭ Desactivado"); return true; }
     if (config.has_extra_products || config.extra_products_dismissed) {
-        LOG("⏭ Ya tiene adicionales o fue descartado");
+        LOG("⏭ Ya tiene adicionales o descartado");
         _processedOrders.add(recordId);
         return true;
     }
 
     const shouldTrigger = triggerType === "confirm" ? config.trigger_confirm : config.trigger_print;
-    if (!shouldTrigger) {
-        LOG("⏭ Trigger no activo para:", triggerType);
-        return true;
-    }
+    if (!shouldTrigger) { LOG("⏭ Trigger no activo para:", triggerType); return true; }
 
     if (!["draft", "sent"].includes(config.order_state)) {
         LOG("⏭ Estado no aplica:", config.order_state);
@@ -112,17 +102,16 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
     }
 
     if (!config.category_ids || config.category_ids.length === 0) {
-        LOG("⚠ Sin categorías configuradas en Ajustes > Ventas > Productos Adicionales");
+        LOG("⚠ Sin categorías en Ajustes > Ventas > Productos Adicionales");
         _processedOrders.add(recordId);
         return true;
     }
 
     // 2. Productos
-    LOG("2. Llamando get_suggested_extra_products...");
     let products;
     try {
         products = await orm.call("sale.order", "get_suggested_extra_products", [[recordId]]);
-        LOG("Productos recibidos:", products?.length, products);
+        LOG("Productos recibidos:", products?.length);
     } catch (e) {
         ERR("get_suggested_extra_products falló:", e);
         return true;
@@ -134,10 +123,10 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
     }
 
-    // 3. Abrir wizard
-    LOG("3. Abriendo wizard...");
+    // 3. Wizard
+    LOG("Abriendo wizard...");
     const result = await openWizard(dialogService, products);
-    LOG("Resultado del wizard:", result.action);
+    LOG("Resultado:", result.action);
 
     if (result.action === "confirm") {
         try {
@@ -160,7 +149,6 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
 
     } else {
-        // dismiss → cancelar la acción original
         LOG("dismiss → cancelando acción original");
         return false;
     }
@@ -175,7 +163,7 @@ patch(FormController.prototype, {
         this._epOrm = useService("orm");
         this._epDialog = useService("dialog");
         this._epEnv = useEnv();
-        LOG("FormController.setup() — patch activo, dialog service:", !!this._epDialog);
+        LOG("FormController.setup() — patch activo");
     },
 
     async beforeExecuteActionButton(clickParams) {
@@ -194,8 +182,17 @@ patch(FormController.prototype, {
         LOG("beforeExecuteActionButton | name:", btnName, "| type:", btnType, "| string:", btnString);
 
         const isConfirm = btnName === "action_confirm";
+
+        // En Odoo 19 los reportes llegan con type="action" y name con "report" o el xmlid del reporte
+        // Capturado de logs reales: name="sale.action_report_saleorder", type="action"
         const isPrint = (
             btnType === "ir.actions.report" ||
+            (btnType === "action" && (
+                btnName.includes("report") ||
+                btnName.includes("print") ||
+                btnName.includes("preview") ||
+                btnName.includes("saleorder")
+            )) ||
             btnName.includes("print") ||
             btnName.includes("report") ||
             btnName.includes("preview") ||
@@ -206,6 +203,8 @@ patch(FormController.prototype, {
             btnString.includes("email") ||
             btnString.includes("correo")
         );
+
+        LOG("isConfirm:", isConfirm, "| isPrint:", isPrint);
 
         if (!isConfirm && !isPrint) {
             return super.beforeExecuteActionButton?.(clickParams) ?? true;

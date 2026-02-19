@@ -61,17 +61,27 @@ class SaleOrder(models.Model):
         ], order='categ_id, name')
 
         existing_product_ids = self.order_line.mapped('product_id').ids
+        currency_code = self.currency_id.name  # 'MXN' o 'USD'
 
         result = []
         for product in products:
+            tmpl = product.product_tmpl_id
+
+            # Precio alto según moneda activa de la orden
+            if currency_code == 'USD':
+                price = tmpl.x_price_usd_1 if tmpl.x_price_usd_1 > 0 else product.lst_price
+            else:
+                price = tmpl.x_price_mxn_1 if tmpl.x_price_mxn_1 > 0 else product.lst_price
+
             result.append({
                 'id': product.id,
                 'name': product.name,
                 'display_name': product.display_name,
                 'categ_name': product.categ_id.name,
                 'categ_id': product.categ_id.id,
-                'price': product.lst_price,
+                'price': price,
                 'currency_symbol': self.currency_id.symbol or '$',
+                'currency_code': currency_code,
                 'uom_name': product.uom_id.name,
                 'image_url': f'/web/image/product.product/{product.id}/image_128',
                 'already_in_order': product.id in existing_product_ids,
