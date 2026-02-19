@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_extra_products" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.extra.products</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='sale_configuration']" position="after">
+                <div id="extra_products_configuration">
+                    <h2>Productos Adicionales en Órdenes de Venta</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="extra_products_wizard_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="extra_products_wizard_enabled" string="Activar Pop-up de Productos Adicionales"/>
+                                <div class="text-muted">
+                                    Muestra un pop-up para sugerir productos complementarios al vendedor
+                                </div>
+                                <div class="content-group" attrs="{'invisible': [('extra_products_wizard_enabled', '=', False)]}">
+                                    <div class="row mt8">
+                                        <label class="col-lg-4 o_light_label" for="extra_products_category_ids" string="Categorías de Productos"/>
+                                        <field name="extra_products_category_ids" widget="many2many_tags" class="col-lg-8"/>
+                                    </div>
+                                    <div class="row mt8">
+                                        <label class="col-lg-4 o_light_label" string="Disparar Pop-up"/>
+                                        <div class="col-lg-8">
+                                            <field name="extra_products_trigger_confirm" class="me-2"/>
+                                            <span class="me-4">Al Confirmar Orden</span>
+                                            <field name="extra_products_trigger_print" class="me-2"/>
+                                            <span>Al Imprimir / Reportes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
