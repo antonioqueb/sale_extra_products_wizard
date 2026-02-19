@@ -638,6 +638,92 @@
     margin: 0 -1rem -1rem;
 }
 
+/* ── Idle countdown ───────────────────────────────────────────────────────── */
+.o_ep_idle_indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 1;
+}
+
+.o_ep_idle_ring {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: epSpin 1s linear infinite;
+}
+
+@keyframes epSpin {
+    to { transform: rotate(360deg); }
+}
+
+.o_ep_idle_count {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    /* Contra-rotar el número para que no gire */
+    animation: epSpinReverse 1s linear infinite;
+}
+
+@keyframes epSpinReverse {
+    to { transform: rotate(-360deg); }
+}
+
+.o_ep_idle_label {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.o_ep_idle_ready {
+    background: rgba(16,185,129,0.25);
+    border: 1px solid rgba(16,185,129,0.5);
+    color: #6ee7b7;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+/* ── Banner bloqueado ─────────────────────────────────────────────────────── */
+.o_ep_locked_banner {
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #92400e;
+    flex-shrink: 0;
+}
+
+.o_ep_locked_icon {
+    font-size: 1.1rem;
+}
+
+/* ── Tarjeta bloqueada ────────────────────────────────────────────────────── */
+.o_ep_product_card.locked {
+    cursor: default;
+    opacity: 0.85;
+}
+
+.o_ep_product_card.locked:hover:not(.already_in_order) {
+    transform: none;
+    border-color: var(--ep-border);
+    box-shadow: var(--ep-shadow-sm);
+}
+
+
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .o_ep_products_grid {
@@ -648,3 +734,5 @@
     .o_ep_action_hint { display: none; }
     .o_ep_btn { flex: 1; justify-content: center; }
 }
+
+

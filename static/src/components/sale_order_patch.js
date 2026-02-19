@@ -48,12 +48,9 @@ function openWizard(dialogService, products) {
                 products,
                 onConfirm: (data) => safeResolve({ action: "confirm", data }),
                 onSkip:    ()     => safeResolve({ action: "skip" }),
-                // Botón X del dialog — cancelar sin hacer nada
                 onDismiss: ()     => safeResolve({ action: "dismiss" }),
             },
             {
-                // onClose del service NO lo usamos como señal —
-                // solo como fallback si el dialog se cierra de otra forma (Escape)
                 onClose: () => safeResolve({ action: "dismiss" }),
             }
         );
@@ -62,6 +59,7 @@ function openWizard(dialogService, products) {
 
 // ─── Detectar si un action es de tipo impresión/reporte ──────────────────────
 function isPrintAction(params) {
+    if (!params) return false;
     const name   = (params?.name   || params?.action?.name   || "").toString().toLowerCase();
     const type   = (params?.type   || params?.action?.type   || "").toString().toLowerCase();
     const tag    = (params?.tag    || params?.action?.tag    || "").toString().toLowerCase();
@@ -169,7 +167,6 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
         return true;
 
     } else {
-        // dismiss = cerrar con X o Escape → cancelar la acción original
         LOG("dismiss → cancelando acción original");
         return false;
     }
@@ -227,6 +224,7 @@ patch(FormController.prototype, {
 });
 
 // ─── PATCH ActionMenus — intercepta el engrane ───────────────────────────────
+// En Odoo 19 el método que se llama es executeAction, no onSelected
 LOG("🔌 Registrando patch ActionMenus...");
 
 patch(ActionMenus.prototype, {
@@ -234,21 +232,22 @@ patch(ActionMenus.prototype, {
         super.setup(...arguments);
         this._epOrm    = useService("orm");
         this._epDialog = useService("dialog");
+        LOG("ActionMenus.setup() — patch activo");
     },
 
-    async onSelected(item) {
-        LOG("ActionMenus.onSelected | item:", JSON.stringify(item).substring(0, 200));
+    async executeAction(action) {
+        LOG("ActionMenus.executeAction | action:", JSON.stringify(action).substring(0, 200));
 
         const resModel = this.props?.context?.active_model || "";
         LOG("ActionMenus resModel:", resModel);
 
         if (resModel !== "sale.order") {
-            return super.onSelected(item);
+            return super.executeAction(action);
         }
 
-        if (!isPrintAction(item)) {
+        if (!isPrintAction(action)) {
             LOG("ActionMenus: no es impresión, pasando");
-            return super.onSelected(item);
+            return super.executeAction(action);
         }
 
         const activeId  = this.props?.context?.active_id;
@@ -258,7 +257,7 @@ patch(ActionMenus.prototype, {
         LOG("ActionMenus: reporte detectado | recordId:", recordId);
 
         if (!recordId) {
-            return super.onSelected(item);
+            return super.executeAction(action);
         }
 
         const shouldContinue = await runExtraProductsWizard({
@@ -274,7 +273,7 @@ patch(ActionMenus.prototype, {
             return;
         }
 
-        return super.onSelected(item);
+        return super.executeAction(action);
     },
 });
 
