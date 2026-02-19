@@ -1,39 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Columna is_extra_product en las líneas de la SO -->
     <record id="view_order_form_extra_products" model="ir.ui.view">
         <field name="name">sale.order.form.extra.products</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-            <!-- Badge en el header si ya tiene productos adicionales -->
-            <xpath expr="//div[@name='button_box']" position="inside">
-                <button name="action_view_extra_products" type="object"
-                        class="oe_stat_button" icon="fa-plus-circle"
-                        attrs="{'invisible': [('has_extra_products', '=', False)]}">
-                    <div class="o_stat_info">
-                        <span class="o_stat_text">Productos</span>
-                        <span class="o_stat_text">Adicionales</span>
-                    </div>
-                </button>
-            </xpath>
-
-            <!-- Campo oculto para lógica JS -->
+            <!-- Campos ocultos para lógica JS -->
             <xpath expr="//sheet" position="inside">
                 <field name="has_extra_products" invisible="1"/>
                 <field name="extra_products_dismissed" invisible="1"/>
             </xpath>
 
-            <!-- Sección visual de Productos Adicionales dentro de las líneas -->
-            <xpath expr="//field[@name='order_line']/tree" position="inside">
+            <!-- Columna is_extra_product en las líneas (Odoo 19 usa list en lugar de tree) -->
+            <xpath expr="//field[@name='order_line']/list" position="inside">
                 <field name="is_extra_product" column_invisible="1"/>
             </xpath>
 
         </field>
     </record>
 
-    <!-- Vista de solo las líneas de productos adicionales (para el stat button) -->
+    <!-- Acción para ver líneas adicionales (stat button futuro) -->
     <record id="action_view_extra_products_lines" model="ir.actions.act_window">
         <field name="name">Productos Adicionales</field>
         <field name="res_model">sale.order.line</field>
