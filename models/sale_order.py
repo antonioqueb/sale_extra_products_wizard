@@ -22,30 +22,22 @@ class SaleOrder(models.Model):
                 line.is_extra_product for line in order.order_line
             )
 
+    def _get_category_ids_from_param(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        ids_str = ICP.get_param('sale_extra_products_wizard.category_ids', '')
+        if not ids_str:
+            return []
+        try:
+            return [int(x) for x in ids_str.split(',') if x.strip().isdigit()]
+        except Exception:
+            return []
+
     def get_extra_products_config(self):
         ICP = self.env['ir.config_parameter'].sudo()
         enabled = ICP.get_param('sale_extra_products_wizard.enabled', 'True') == 'True'
         trigger_confirm = ICP.get_param('sale_extra_products_wizard.trigger_confirm', 'True') == 'True'
         trigger_print = ICP.get_param('sale_extra_products_wizard.trigger_print', 'True') == 'True'
-
-        category_ids_str = ICP.get_param('sale_extra_products_wizard.category_ids', '')
-        category_ids = []
-        if category_ids_str:
-            try:
-                import json
-                parsed = json.loads(category_ids_str)
-                # Odoo guarda many2many como [[6, false, [id1, id2, ...]]]
-                if isinstance(parsed, list) and parsed:
-                    inner = parsed[0]
-                    if isinstance(inner, list) and len(inner) == 3:
-                        category_ids = [int(i) for i in inner[2] if str(i).isdigit()]
-                    elif isinstance(inner, int):
-                        category_ids = [int(i) for i in parsed]
-            except Exception:
-                try:
-                    category_ids = [int(x) for x in category_ids_str.split(',') if x.strip().isdigit()]
-                except Exception:
-                    category_ids = []
+        category_ids = self._get_category_ids_from_param()
 
         return {
             'enabled': enabled,
@@ -58,25 +50,7 @@ class SaleOrder(models.Model):
         }
 
     def get_suggested_extra_products(self):
-        ICP = self.env['ir.config_parameter'].sudo()
-        category_ids_str = ICP.get_param('sale_extra_products_wizard.category_ids', '')
-        category_ids = []
-        if category_ids_str:
-            try:
-                import json
-                parsed = json.loads(category_ids_str)
-                if isinstance(parsed, list) and parsed:
-                    inner = parsed[0]
-                    if isinstance(inner, list) and len(inner) == 3:
-                        category_ids = [int(i) for i in inner[2] if str(i).isdigit()]
-                    elif isinstance(inner, int):
-                        category_ids = [int(i) for i in parsed]
-            except Exception:
-                try:
-                    category_ids = [int(x) for x in category_ids_str.split(',') if x.strip().isdigit()]
-                except Exception:
-                    category_ids = []
-
+        category_ids = self._get_category_ids_from_param()
         if not category_ids:
             return []
 
