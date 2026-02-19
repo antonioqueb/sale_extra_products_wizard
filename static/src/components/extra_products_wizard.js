@@ -1,12 +1,7 @@
 /** @odoo-module **/
 
-import { Component, useState, onMounted } from "@odoo/owl";
-import { registry } from "@web/core/registry";
+import { Component, useState } from "@odoo/owl";
 
-/**
- * ExtraProductsDialog
- * Pop-up elegante para agregar productos adicionales a una SO.
- */
 export class ExtraProductsDialog extends Component {
     static template = "sale_extra_products_wizard.ExtraProductsDialog";
 
@@ -20,14 +15,9 @@ export class ExtraProductsDialog extends Component {
     setup() {
         this.state = useState({
             activeCategory: null,
-            // { [productId]: quantity }
             selected: {},
         });
     }
-
-    // ------------------------------------------------------------------ //
-    // Computed
-    // ------------------------------------------------------------------ //
 
     get categories() {
         const map = {};
@@ -37,7 +27,7 @@ export class ExtraProductsDialog extends Component {
             }
             map[p.categ_id].count++;
         }
-        return Object.values(map);
+        return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     get filteredProducts() {
@@ -49,22 +39,22 @@ export class ExtraProductsDialog extends Component {
         return Object.keys(this.state.selected).length;
     }
 
+    get totalItems() {
+        return Object.values(this.state.selected).reduce((acc, q) => acc + q, 0);
+    }
+
     get currencySymbol() {
         return this.props.products[0]?.currency_symbol || "$";
     }
 
     get totalAmount() {
         let total = 0;
-        for (const [prodId, qty] of Object.entries(this.state.selected)) {
-            const product = this.props.products.find(p => p.id === parseInt(prodId));
+        for (const [prodIdStr, qty] of Object.entries(this.state.selected)) {
+            const product = this.props.products.find(p => p.id === parseInt(prodIdStr));
             if (product) total += product.price * qty;
         }
         return total;
     }
-
-    // ------------------------------------------------------------------ //
-    // Helpers
-    // ------------------------------------------------------------------ //
 
     isSelected(productId) {
         return productId in this.state.selected;
@@ -75,22 +65,24 @@ export class ExtraProductsDialog extends Component {
     }
 
     formatPrice(amount) {
-        return amount.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return amount.toLocaleString("es-MX", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
     }
-
-    // ------------------------------------------------------------------ //
-    // Handlers
-    // ------------------------------------------------------------------ //
 
     setCategory(categoryId) {
         this.state.activeCategory = categoryId;
     }
 
     toggleProduct(product) {
+        if (product.already_in_order) return;
         if (this.isSelected(product.id)) {
-            delete this.state.selected[product.id];
+            const newSelected = { ...this.state.selected };
+            delete newSelected[product.id];
+            this.state.selected = newSelected;
         } else {
-            this.state.selected[product.id] = 1;
+            this.state.selected = { ...this.state.selected, [product.id]: 1 };
         }
     }
 
@@ -98,27 +90,26 @@ export class ExtraProductsDialog extends Component {
         if (!this.isSelected(productId)) return;
         const newQty = (this.state.selected[productId] || 1) + delta;
         if (newQty <= 0) {
-            delete this.state.selected[productId];
+            const newSelected = { ...this.state.selected };
+            delete newSelected[productId];
+            this.state.selected = newSelected;
         } else {
-            this.state.selected[productId] = newQty;
+            this.state.selected = { ...this.state.selected, [productId]: newQty };
         }
     }
 
     setQty(productId, value) {
         const qty = parseInt(value) || 1;
         if (qty <= 0) {
-            delete this.state.selected[productId];
+            const newSelected = { ...this.state.selected };
+            delete newSelected[productId];
+            this.state.selected = newSelected;
         } else {
-            this.state.selected[productId] = qty;
+            this.state.selected = { ...this.state.selected, [productId]: qty };
         }
     }
 
-    onOverlayClick() {
-        // Click en el overlay no cierra (evitar cierres accidentales)
-    }
-
     onImgError(ev) {
-        // Reemplaza imagen rota con un emoji
         ev.target.style.display = "none";
         const placeholder = document.createElement("div");
         placeholder.className = "o_ep_product_img_placeholder";
@@ -128,7 +119,6 @@ export class ExtraProductsDialog extends Component {
 
     onConfirm() {
         if (this.selectedCount === 0) return;
-
         const productsToAdd = [];
         for (const [prodIdStr, qty] of Object.entries(this.state.selected)) {
             const prodId = parseInt(prodIdStr);
@@ -141,15 +131,9 @@ export class ExtraProductsDialog extends Component {
                 });
             }
         }
-
         this.props.onConfirm(productsToAdd);
     }
 
-    onSkip() {
-        this.props.onSkip();
-    }
-
-    onDismiss() {
-        this.props.onDismiss();
-    }
+    onSkip() { this.props.onSkip(); }
+    onDismiss() { this.props.onDismiss(); }
 }
