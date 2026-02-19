@@ -1,29 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Categorías de productos adicionales sugeridas -->
-    <!-- Estas categorías son de referencia; puedes usar las propias del cliente -->
+    <!-- Puedes reutilizar categorías existentes desde Ajustes > Productos Adicionales -->
+
     <record id="product_categ_adhesivos" model="product.category">
         <field name="name">Adhesivos</field>
-        <field name="parent_id" ref="product.product_category_all"/>
     </record>
 
     <record id="product_categ_selladores" model="product.category">
         <field name="name">Selladores</field>
-        <field name="parent_id" ref="product.product_category_all"/>
     </record>
 
     <record id="product_categ_herramientas" model="product.category">
         <field name="name">Herramientas</field>
-        <field name="parent_id" ref="product.product_category_all"/>
     </record>
 
     <record id="product_categ_accesorios" model="product.category">
         <field name="name">Accesorios</field>
-        <field name="parent_id" ref="product.product_category_all"/>
     </record>
 
     <record id="product_categ_limpiadores" model="product.category">
         <field name="name">Limpiadores</field>
-        <field name="parent_id" ref="product.product_category_all"/>
     </record>
+
 </odoo>
