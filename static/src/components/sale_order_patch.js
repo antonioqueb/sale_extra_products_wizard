@@ -178,7 +178,7 @@ async function runExtraProductsWizard({ orm, dialogService, recordId, triggerTyp
 }
 
 // ─── PATCH FormController ─────────────────────────────────────────────────────
-const IDLE_TIMEOUT_MS = 8000; // 5 segundos sin actividad
+const IDLE_TIMEOUT_MS = 10000; // 10 segundos sin actividad
 
 LOG("🔌 Registrando patch FormController...");
 
