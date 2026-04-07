@@ -83,7 +83,7 @@ class SaleOrder(models.Model):
                 'currency_symbol': self.currency_id.symbol or '$',
                 'currency_code': currency_code,
                 'uom_name': product.uom_id.name,
-                'image_url': f'/web/image/product.product/{product.id}/image_128',
+                'image_url': f'/web/image/product.product/{product.id}/image_1920',
                 'already_in_order': product.id in existing_product_ids,
                 'description': product.description_sale or '',
             })
