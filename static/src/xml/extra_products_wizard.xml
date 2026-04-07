@@ -54,29 +54,37 @@
                             }"
                             t-on-click="() => this.toggleProduct(product)"
                         >
+                            <!-- Badge de selección -->
                             <div class="o_ep_check_badge" t-if="isSelected(product.id)">✓</div>
                             <div class="o_ep_already_badge" t-if="product.already_in_order">En orden</div>
 
-                            <div class="o_ep_product_img_wrap">
+                            <!-- Imagen full-bleed -->
+                            <div class="o_ep_product_img_area">
                                 <img
                                     class="o_ep_product_img"
                                     t-att-src="product.image_url"
                                     t-att-alt="product.name"
                                     t-on-error="onImgError"
+                                    loading="lazy"
                                 />
+                                <div class="o_ep_product_img_placeholder_bg">📦</div>
                             </div>
 
-                            <div class="o_ep_product_info">
+                            <!-- Overlay inferior con info -->
+                            <div class="o_ep_product_overlay">
                                 <div class="o_ep_product_categ" t-esc="product.categ_name"/>
                                 <div class="o_ep_product_name" t-esc="product.name"/>
                                 <div class="o_ep_product_desc" t-if="product.description" t-esc="product.description"/>
-                                <div class="o_ep_product_price">
-                                    <span class="o_ep_currency" t-esc="product.currency_symbol"/>
-                                    <span t-esc="formatPrice(product.price)"/>
-                                    <span class="o_ep_product_uom"> / <t t-esc="product.uom_name"/></span>
+                                <div class="o_ep_product_price_row">
+                                    <div class="o_ep_product_price">
+                                        <span class="o_ep_currency" t-esc="product.currency_symbol"/>
+                                        <span t-esc="formatPrice(product.price)"/>
+                                    </div>
+                                    <span class="o_ep_product_uom">/ <t t-esc="product.uom_name"/></span>
                                 </div>
                             </div>
 
+                            <!-- Control de cantidad flotante -->
                             <div class="o_ep_qty_control" t-if="isSelected(product.id)" t-on-click.stop="">
                                 <button class="o_ep_qty_btn" t-on-click="() => this.changeQty(product.id, -1)">−</button>
                                 <input
