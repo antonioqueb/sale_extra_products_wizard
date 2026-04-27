@@ -1,7 +1,7 @@
 /* ==========================================================================
    Extra Products Wizard — Alphaqueb Consulting SAS
-   Tema cálido claro maderero: nogal, cedro, miel, roble y pergamino.
-   Regla funcional: solo el cuerpo de productos scrollea; acciones siempre visibles.
+   Tema cálido claro maderero.
+   Regla funcional: solo el grid de productos scrollea; acciones siempre visibles.
    ========================================================================== */
 
 :root {
@@ -34,58 +34,74 @@
 
     --ep-radius-xs: 10px;
     --ep-radius-sm: 14px;
-    --ep-radius-md: 20px;
-    --ep-radius-lg: 28px;
+    --ep-radius-md: 18px;
+    --ep-radius-lg: 24px;
 
     --ep-shadow-sm: 0 2px 8px rgba(74, 42, 24, 0.08);
-    --ep-shadow-md: 0 10px 28px rgba(74, 42, 24, 0.13);
-    --ep-shadow-lg: 0 24px 70px rgba(47, 27, 16, 0.24);
+    --ep-shadow-md: 0 8px 22px rgba(74, 42, 24, 0.13);
+    --ep-shadow-lg: 0 22px 60px rgba(47, 27, 16, 0.24);
 }
 
 /* ==========================================================================
-   Integración con Dialog de Odoo
+   Limpieza del Dialog nativo de Odoo
+   Oculta el header nativo SOLO cuando el modal contiene este wizard.
    ========================================================================== */
 
-.o_dialog .o_ep_wizard_shell {
-    margin: -1rem;
+.modal-dialog:has(.o_ep_wizard_shell) {
+    width: 96vw;
+    max-width: 1160px;
 }
+
+.modal-content:has(.o_ep_wizard_shell) {
+    overflow: hidden;
+    border: 1px solid rgba(122, 68, 36, 0.16);
+    border-radius: var(--ep-radius-lg);
+    background: var(--ep-cream);
+    box-shadow: var(--ep-shadow-lg);
+}
+
+.modal-content:has(.o_ep_wizard_shell) > .modal-header {
+    display: none !important;
+}
+
+.modal-content:has(.o_ep_wizard_shell) > .modal-body {
+    padding: 0 !important;
+    overflow: hidden;
+    background: var(--ep-cream);
+}
+
+.o_dialog .o_ep_wizard_shell {
+    margin: 0;
+}
+
+/* ==========================================================================
+   Contenedor principal
+   ========================================================================== */
 
 .o_ep_wizard_shell {
     width: 100%;
-    height: calc(92vh - 24px);
-    max-height: 860px;
+    height: 86vh;
+    max-height: 820px;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background:
-        radial-gradient(circle at 12% 0%, rgba(228, 182, 106, 0.22), transparent 32%),
-        radial-gradient(circle at 92% 8%, rgba(241, 214, 170, 0.45), transparent 34%),
-        linear-gradient(180deg, #ffffff 0%, var(--ep-cream) 48%, var(--ep-cream-2) 100%);
-    border-radius: var(--ep-radius-lg);
     color: var(--ep-text);
-}
-
-.o_dialog .modal-content {
-    border-radius: var(--ep-radius-lg);
-    border: 1px solid rgba(122, 68, 36, 0.14);
-    box-shadow: var(--ep-shadow-lg);
-    overflow: hidden;
-    background: var(--ep-cream);
-}
-
-.o_dialog .modal-body {
-    background: var(--ep-cream);
+    background:
+        radial-gradient(circle at 14% 0%, rgba(228, 182, 106, 0.18), transparent 34%),
+        radial-gradient(circle at 94% 6%, rgba(241, 214, 170, 0.42), transparent 36%),
+        linear-gradient(180deg, #ffffff 0%, var(--ep-cream) 46%, var(--ep-cream-2) 100%);
 }
 
 /* ==========================================================================
-   Header premium claro
+   Header único
    ========================================================================== */
 
 .o_ep_dialog_header {
     position: relative;
     flex-shrink: 0;
-    padding: 24px 28px;
+    min-height: 106px;
+    padding: 22px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -95,8 +111,8 @@
     background:
         linear-gradient(
             135deg,
-            rgba(255, 253, 247, 0.96) 0%,
-            rgba(252, 240, 220, 0.98) 54%,
+            rgba(255, 253, 247, 0.98) 0%,
+            rgba(252, 240, 220, 0.98) 52%,
             rgba(249, 232, 204, 0.98) 100%
         );
 }
@@ -106,22 +122,22 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.16;
+    opacity: 0.11;
     background-image:
         repeating-linear-gradient(
             110deg,
             rgba(122, 68, 36, 0.22) 0,
             rgba(122, 68, 36, 0.22) 1px,
             transparent 1px,
-            transparent 16px
+            transparent 18px
         );
 }
 
 .o_ep_dialog_header::after {
     content: "";
     position: absolute;
-    right: -70px;
-    top: -90px;
+    right: -76px;
+    top: -92px;
     width: 260px;
     height: 260px;
     border-radius: 999px;
@@ -129,8 +145,8 @@
     background:
         radial-gradient(
             circle,
-            rgba(228, 182, 106, 0.42) 0%,
-            rgba(228, 182, 106, 0.08) 52%,
+            rgba(228, 182, 106, 0.35) 0%,
+            rgba(228, 182, 106, 0.08) 54%,
             transparent 72%
         );
 }
@@ -145,24 +161,28 @@
 }
 
 .o_ep_header_icon {
-    width: 66px;
-    height: 66px;
-    flex: 0 0 66px;
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 22px;
+    border-radius: 20px;
     color: var(--ep-walnut);
-    font-size: 2rem;
+    font-size: 1.9rem;
     background: linear-gradient(135deg, var(--ep-oak-light), var(--ep-honey));
     border: 1px solid rgba(167, 103, 53, 0.26);
-    box-shadow: 0 14px 30px rgba(167, 103, 53, 0.18);
+    box-shadow: 0 12px 26px rgba(167, 103, 53, 0.16);
+}
+
+.o_ep_header_text {
+    min-width: 0;
 }
 
 .o_ep_dialog_header h2 {
     margin: 0 0 5px;
     color: var(--ep-walnut);
-    font-size: 1.55rem;
+    font-size: 1.42rem;
     font-weight: 950;
     line-height: 1.08;
     letter-spacing: -0.035em;
@@ -170,11 +190,11 @@
 
 .o_ep_dialog_header p {
     margin: 0;
-    max-width: 620px;
+    max-width: 650px;
     color: var(--ep-text-secondary);
-    font-size: 0.86rem;
-    font-weight: 600;
-    line-height: 1.45;
+    font-size: 0.84rem;
+    font-weight: 650;
+    line-height: 1.4;
 }
 
 .o_ep_close_btn {
@@ -189,10 +209,11 @@
     border-radius: 999px;
     cursor: pointer;
     border: 1px solid rgba(122, 68, 36, 0.18);
-    background: rgba(255, 253, 247, 0.88);
+    background: rgba(255, 253, 247, 0.92);
     color: var(--ep-cedar);
-    font-size: 0.95rem;
-    font-weight: 900;
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1;
     box-shadow: var(--ep-shadow-sm);
     transition:
         background 0.18s ease,
@@ -218,7 +239,7 @@
     gap: 8px;
     padding: 14px 20px;
     overflow-x: auto;
-    background: rgba(255, 248, 236, 0.92);
+    background: rgba(255, 248, 236, 0.94);
     border-bottom: 1px solid rgba(122, 68, 36, 0.12);
     scrollbar-width: thin;
     scrollbar-color: rgba(122, 68, 36, 0.35) transparent;
@@ -238,10 +259,11 @@
     display: flex;
     align-items: center;
     gap: 7px;
+    min-height: 38px;
     padding: 9px 15px;
     border-radius: 999px;
     border: 1px solid rgba(122, 68, 36, 0.16);
-    background: rgba(255, 253, 247, 0.92);
+    background: rgba(255, 253, 247, 0.95);
     color: var(--ep-text-secondary);
     cursor: pointer;
     white-space: nowrap;
@@ -252,7 +274,8 @@
         background 0.18s ease,
         color 0.18s ease,
         border-color 0.18s ease,
-        transform 0.18s ease;
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
 }
 
 .o_ep_tab:hover {
@@ -266,7 +289,7 @@
     color: #ffffff;
     border-color: transparent;
     background: linear-gradient(135deg, var(--ep-cedar), var(--ep-walnut));
-    box-shadow: 0 8px 18px rgba(74, 42, 24, 0.18);
+    box-shadow: 0 8px 18px rgba(74, 42, 24, 0.17);
 }
 
 .o_ep_tab_count {
@@ -282,7 +305,7 @@
 
 .o_ep_tab.active .o_ep_tab_count {
     color: var(--ep-walnut);
-    background: rgba(255, 253, 247, 0.86);
+    background: rgba(255, 253, 247, 0.9);
 }
 
 /* ==========================================================================
@@ -328,7 +351,7 @@
     min-width: 0;
     cursor: pointer;
     user-select: none;
-    border-radius: 22px;
+    border-radius: 20px;
     border: 1px solid rgba(122, 68, 36, 0.14);
     background: linear-gradient(180deg, #ffffff 0%, var(--ep-cream) 100%);
     box-shadow: var(--ep-shadow-sm);
@@ -364,7 +387,7 @@
 .o_ep_product_card.selected {
     border-color: rgba(122, 68, 36, 0.42);
     background: linear-gradient(180deg, #ffffff 0%, var(--ep-cream-2) 100%);
-    box-shadow: 0 14px 34px rgba(74, 42, 24, 0.16);
+    box-shadow: 0 12px 30px rgba(74, 42, 24, 0.15);
 }
 
 .o_ep_product_card.already_in_order {
@@ -378,7 +401,7 @@
 .o_ep_product_img_area {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 0.86;
+    aspect-ratio: 1 / 0.82;
     overflow: hidden;
     flex-shrink: 0;
     background: linear-gradient(135deg, var(--ep-parchment), var(--ep-oak-light));
@@ -391,12 +414,13 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    padding: 12px;
     transition: transform 0.28s ease;
 }
 
 .o_ep_product_card:hover:not(.already_in_order) .o_ep_product_img {
-    transform: scale(1.025);
+    transform: scale(1.02);
 }
 
 .o_ep_product_img_placeholder_bg {
@@ -407,9 +431,9 @@
     align-items: center;
     justify-content: center;
     color: rgba(122, 68, 36, 0.18);
-    font-size: 3.6rem;
+    font-size: 3.4rem;
     background:
-        radial-gradient(circle at 38% 24%, rgba(228, 182, 106, 0.34), transparent 38%),
+        radial-gradient(circle at 38% 24%, rgba(228, 182, 106, 0.28), transparent 38%),
         linear-gradient(135deg, var(--ep-parchment), var(--ep-oak-light));
     pointer-events: none;
 }
@@ -629,14 +653,14 @@
     width: 78px;
     height: 78px;
     margin-bottom: 16px;
-    border-radius: 26px;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, var(--ep-oak-light), var(--ep-parchment));
     border: 1px solid rgba(122, 68, 36, 0.14);
     box-shadow: var(--ep-shadow-sm);
-    font-size: 2.5rem;
+    font-size: 2.4rem;
 }
 
 .o_ep_empty_state p {
@@ -695,7 +719,7 @@
 }
 
 /* ==========================================================================
-   Barra de acciones SIEMPRE visible
+   Barra de acciones siempre visible
    ========================================================================== */
 
 .o_ep_action_bar {
@@ -836,7 +860,7 @@
 }
 
 /* ==========================================================================
-   Compatibilidad con clases antiguas no usadas directamente
+   Compatibilidad con clases antiguas
    ========================================================================== */
 
 .o_extra_products_overlay {
@@ -922,26 +946,33 @@
    ========================================================================== */
 
 @media (max-width: 900px) {
+    .modal-dialog:has(.o_ep_wizard_shell) {
+        width: 97vw;
+        max-width: 97vw;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     .o_ep_wizard_shell {
-        height: calc(92vh - 24px);
-        max-height: calc(92vh - 24px);
-        min-height: 0;
+        height: 90vh;
+        max-height: 90vh;
     }
 
     .o_ep_dialog_header {
-        padding: 20px;
+        min-height: 96px;
+        padding: 18px 20px;
     }
 
     .o_ep_header_icon {
-        width: 56px;
-        height: 56px;
-        flex-basis: 56px;
+        width: 54px;
+        height: 54px;
+        flex-basis: 54px;
         border-radius: 18px;
-        font-size: 1.65rem;
+        font-size: 1.6rem;
     }
 
     .o_ep_dialog_header h2 {
-        font-size: 1.28rem;
+        font-size: 1.22rem;
     }
 
     .o_ep_dialog_header p {
@@ -955,20 +986,21 @@
 }
 
 @media (max-width: 640px) {
-    .o_dialog .o_ep_wizard_shell {
-        margin: -0.75rem;
+    .modal-dialog:has(.o_ep_wizard_shell) {
+        width: 98vw;
+        max-width: 98vw;
+        margin: 6px auto;
     }
 
     .o_ep_wizard_shell {
-        height: calc(92vh - 18px);
-        max-height: calc(92vh - 18px);
-        min-height: 0;
-        border-radius: 22px;
+        height: 94vh;
+        max-height: 94vh;
     }
 
     .o_ep_dialog_header {
         align-items: flex-start;
-        padding: 18px;
+        min-height: auto;
+        padding: 16px;
     }
 
     .o_ep_header_left {
@@ -976,11 +1008,11 @@
     }
 
     .o_ep_header_icon {
-        width: 48px;
-        height: 48px;
-        flex-basis: 48px;
-        border-radius: 16px;
-        font-size: 1.45rem;
+        width: 46px;
+        height: 46px;
+        flex-basis: 46px;
+        border-radius: 15px;
+        font-size: 1.35rem;
     }
 
     .o_ep_close_btn {
@@ -1003,7 +1035,7 @@
     }
 
     .o_ep_product_img_area {
-        aspect-ratio: 1 / 0.82;
+        aspect-ratio: 1 / 0.78;
     }
 
     .o_ep_product_info {
