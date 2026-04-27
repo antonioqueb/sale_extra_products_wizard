@@ -2,145 +2,174 @@
 <templates xml:space="preserve">
 
     <t t-name="sale_extra_products_wizard.ExtraProductsDialog">
-        <Dialog title="'Productos Adicionales Recomendados'" size="'xl'" footer="false">
+        <Dialog title="''" size="'xl'" footer="false">
 
-            <!-- ── Header interno ───────────────────────────── -->
-            <div class="o_ep_dialog_header">
-                <div class="o_ep_header_left">
-                    <span class="o_ep_header_icon">✨</span>
-                    <div>
-                        <h2>Productos Adicionales Recomendados</h2>
-                        <p>Complementa esta orden con nuestros productos de instalación y cuidado</p>
+            <div class="o_ep_wizard_shell">
+
+                <!-- Header premium interno -->
+                <div class="o_ep_dialog_header">
+                    <div class="o_ep_header_left">
+                        <span class="o_ep_header_icon">✦</span>
+                        <div>
+                            <h2>Productos adicionales recomendados</h2>
+                            <p>Complementa esta orden con productos de instalación, cuidado y acabado.</p>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- ── Tabs de categorías ────────────────────────── -->
-            <div class="o_ep_category_tabs" t-if="categories.length > 1">
-                <button
-                    class="o_ep_tab"
-                    t-att-class="{ active: state.activeCategory === null }"
-                    t-on-click="() => this.setCategory(null)"
-                >
-                    Todos <span class="o_ep_tab_count" t-esc="props.products.length"/>
-                </button>
-                <t t-foreach="categories" t-as="cat" t-key="cat.id">
-                    <button
-                        class="o_ep_tab"
-                        t-att-class="{ active: state.activeCategory === cat.id }"
-                        t-on-click="() => this.setCategory(cat.id)"
-                    >
-                        <t t-esc="cat.name"/>
-                        <span class="o_ep_tab_count" t-esc="cat.count"/>
+                    <button type="button" class="o_ep_close_btn" t-on-click="onDismiss" title="Cerrar">
+                        ✕
                     </button>
-                </t>
-            </div>
+                </div>
 
-            <!-- ── Grid de productos ─────────────────────────── -->
-            <div class="o_ep_products_body">
-                <t t-if="filteredProducts.length === 0">
-                    <div class="o_ep_empty_state">
-                        <div class="o_ep_empty_icon">📦</div>
-                        <p>No hay productos disponibles en esta categoría</p>
-                    </div>
-                </t>
-                <div class="o_ep_products_grid" t-else="">
-                    <t t-foreach="filteredProducts" t-as="product" t-key="product.id">
-                        <div
-                            class="o_ep_product_card"
-                            t-att-class="{
-                                selected: isSelected(product.id),
-                                already_in_order: product.already_in_order
-                            }"
-                            t-on-click="() => this.toggleProduct(product)"
+                <!-- Tabs de categorías -->
+                <div class="o_ep_category_tabs" t-if="categories.length > 1">
+                    <button
+                        type="button"
+                        class="o_ep_tab"
+                        t-att-class="{ active: state.activeCategory === null }"
+                        t-on-click="() => this.setCategory(null)"
+                    >
+                        Todos <span class="o_ep_tab_count" t-esc="props.products.length"/>
+                    </button>
+
+                    <t t-foreach="categories" t-as="cat" t-key="cat.id">
+                        <button
+                            type="button"
+                            class="o_ep_tab"
+                            t-att-class="{ active: state.activeCategory === cat.id }"
+                            t-on-click="() => this.setCategory(cat.id)"
                         >
-                            <!-- Badge de selección -->
-                            <div class="o_ep_check_badge" t-if="isSelected(product.id)">✓</div>
-                            <div class="o_ep_already_badge" t-if="product.already_in_order">En orden</div>
+                            <t t-esc="cat.name"/>
+                            <span class="o_ep_tab_count" t-esc="cat.count"/>
+                        </button>
+                    </t>
+                </div>
 
-                            <!-- Imagen grande arriba -->
-                            <div class="o_ep_product_img_area">
-                                <img
-                                    class="o_ep_product_img"
-                                    t-att-src="product.image_url"
-                                    t-att-alt="product.name"
-                                    t-on-error="onImgError"
-                                    loading="lazy"
-                                />
-                                <div class="o_ep_product_img_placeholder_bg">📦</div>
-
-                                <!-- Qty control flotante sobre la imagen -->
-                                <div class="o_ep_qty_control" t-if="isSelected(product.id)" t-on-click.stop="">
-                                    <button class="o_ep_qty_btn" t-on-click="() => this.changeQty(product.id, -1)">−</button>
-                                    <input
-                                        type="number"
-                                        class="o_ep_qty_input"
-                                        min="1"
-                                        t-att-value="getQty(product.id)"
-                                        t-on-change="(ev) => this.setQty(product.id, ev.target.value)"
-                                    />
-                                    <button class="o_ep_qty_btn" t-on-click="() => this.changeQty(product.id, 1)">+</button>
-                                </div>
-                            </div>
-
-                            <!-- Info del producto ABAJO, fuera de la imagen -->
-                            <div class="o_ep_product_info">
-                                <div class="o_ep_product_categ" t-esc="product.categ_name"/>
-                                <div class="o_ep_product_name" t-esc="product.name"/>
-                                <div class="o_ep_product_desc" t-if="product.description" t-esc="product.description"/>
-                                <div class="o_ep_product_price_row">
-                                    <div class="o_ep_product_price">
-                                        <span class="o_ep_currency" t-esc="product.currency_symbol"/>
-                                        <span t-esc="formatPrice(product.price)"/>
-                                    </div>
-                                    <span class="o_ep_product_uom">/ <t t-esc="product.uom_name"/></span>
-                                </div>
-                            </div>
+                <!-- Cuerpo scrolleable: SOLO esta sección debe desplazarse -->
+                <div class="o_ep_products_body">
+                    <t t-if="filteredProducts.length === 0">
+                        <div class="o_ep_empty_state">
+                            <div class="o_ep_empty_icon">📦</div>
+                            <p>No hay productos disponibles en esta categoría.</p>
                         </div>
                     </t>
-                </div>
-            </div>
 
-            <!-- ── Resumen del carrito ───────────────────────── -->
-            <div class="o_ep_cart_bar" t-if="selectedCount > 0">
-                <div class="o_ep_cart_summary">
-                    <div class="o_ep_cart_label">Seleccionados</div>
-                    <div class="o_ep_cart_items">
-                        <t t-esc="selectedCount"/> producto(s) —
-                        <t t-esc="totalItems"/> unidad(es)
+                    <div class="o_ep_products_grid" t-else="">
+                        <t t-foreach="filteredProducts" t-as="product" t-key="product.id">
+                            <div
+                                class="o_ep_product_card"
+                                t-att-class="{
+                                    selected: isSelected(product.id),
+                                    already_in_order: product.already_in_order
+                                }"
+                                t-on-click="() => this.toggleProduct(product)"
+                            >
+                                <div class="o_ep_check_badge" t-if="isSelected(product.id)">✓</div>
+                                <div class="o_ep_already_badge" t-if="product.already_in_order">En orden</div>
+
+                                <div class="o_ep_product_img_area">
+                                    <img
+                                        class="o_ep_product_img"
+                                        t-att-src="product.image_url"
+                                        t-att-alt="product.name"
+                                        t-on-error="onImgError"
+                                        loading="lazy"
+                                    />
+                                    <div class="o_ep_product_img_placeholder_bg">📦</div>
+
+                                    <div class="o_ep_qty_control" t-if="isSelected(product.id)" t-on-click.stop="">
+                                        <button
+                                            type="button"
+                                            class="o_ep_qty_btn"
+                                            t-on-click="() => this.changeQty(product.id, -1)"
+                                        >
+                                            −
+                                        </button>
+
+                                        <input
+                                            type="number"
+                                            class="o_ep_qty_input"
+                                            min="1"
+                                            t-att-value="getQty(product.id)"
+                                            t-on-change="(ev) => this.setQty(product.id, ev.target.value)"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            class="o_ep_qty_btn"
+                                            t-on-click="() => this.changeQty(product.id, 1)"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="o_ep_product_info">
+                                    <div class="o_ep_product_categ" t-esc="product.categ_name"/>
+                                    <div class="o_ep_product_name" t-esc="product.name"/>
+                                    <div class="o_ep_product_desc" t-if="product.description" t-esc="product.description"/>
+
+                                    <div class="o_ep_product_price_row">
+                                        <div class="o_ep_product_price">
+                                            <span class="o_ep_currency" t-esc="product.currency_symbol"/>
+                                            <span t-esc="formatPrice(product.price)"/>
+                                        </div>
+                                        <span class="o_ep_product_uom">/ <t t-esc="product.uom_name"/></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
                     </div>
                 </div>
-                <div class="o_ep_cart_total">
-                    <div class="o_ep_total_label">Total adicional (aprox.)</div>
-                    <div class="o_ep_total_amount">
-                        <t t-esc="currencySymbol"/>&#160;<t t-esc="formatPrice(totalAmount)"/>
+
+                <!-- Resumen fijo -->
+                <div class="o_ep_cart_bar" t-if="selectedCount > 0">
+                    <div class="o_ep_cart_summary">
+                        <div class="o_ep_cart_label">Seleccionados</div>
+                        <div class="o_ep_cart_items">
+                            <t t-esc="selectedCount"/> producto(s) —
+                            <t t-esc="totalItems"/> unidad(es)
+                        </div>
+                    </div>
+
+                    <div class="o_ep_cart_total">
+                        <div class="o_ep_total_label">Total adicional aproximado</div>
+                        <div class="o_ep_total_amount">
+                            <t t-esc="currencySymbol"/>&#160;<t t-esc="formatPrice(totalAmount)"/>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ── Acciones ──────────────────────────────────── -->
-            <div class="o_ep_action_bar">
-                <div class="o_ep_action_hint" t-if="selectedCount === 0">
-                    Selecciona productos o elige una opción →
+                <!-- Acciones siempre visibles -->
+                <div class="o_ep_action_bar">
+                    <div class="o_ep_action_hint" t-if="selectedCount === 0">
+                        Puedes seleccionar productos adicionales o continuar la operación sin agregarlos.
+                    </div>
+
+                    <div class="o_ep_action_buttons">
+                        <button type="button" class="o_ep_btn o_ep_btn_skip" t-on-click="onSkip">
+                            <span class="o_ep_btn_icon">→</span>
+                            Continuar sin adicionales
+                        </button>
+
+                        <button
+                            type="button"
+                            class="o_ep_btn o_ep_btn_add"
+                            t-att-disabled="selectedCount === 0 ? true : undefined"
+                            t-on-click="onConfirm"
+                        >
+                            <t t-if="selectedCount > 0">
+                                <span class="o_ep_btn_icon">✓</span>
+                                Agregar <t t-esc="selectedCount"/> producto(s)
+                            </t>
+                            <t t-else="">
+                                <span class="o_ep_btn_icon">＋</span>
+                                Selecciona productos
+                            </t>
+                        </button>
+                    </div>
                 </div>
-                <button class="o_ep_btn o_ep_btn_skip" t-on-click="onSkip">
-                    <span class="o_ep_btn_icon">→</span>
-                    Continuar sin adicionales
-                </button>
-                <button
-                    class="o_ep_btn o_ep_btn_add"
-                    t-att-disabled="selectedCount === 0 ? true : undefined"
-                    t-on-click="onConfirm"
-                >
-                    <t t-if="selectedCount > 0">
-                        <span class="o_ep_btn_icon">✓</span>
-                        Agregar <t t-esc="selectedCount"/> producto(s) a la orden
-                    </t>
-                    <t t-else="">
-                        <span class="o_ep_btn_icon">＋</span>
-                        Selecciona productos para agregar
-                    </t>
-                </button>
+
             </div>
 
         </Dialog>
