@@ -1,45 +1,84 @@
 /* ==========================================================================
    Extra Products Wizard — Alphaqueb Consulting SAS
-   Tema cálido claro maderero.
+   Tema homologado Stone / Inventario Visual Premium UI.
    Regla funcional: solo el grid de productos scrollea; acciones siempre visibles.
    ========================================================================== */
 
 :root {
-    --ep-walnut: #4A2A18;
-    --ep-walnut-dark: #2F1B10;
-    --ep-cedar: #7A4424;
-    --ep-copper: #A76735;
-    --ep-caramel: #C58A4A;
-    --ep-honey: #E4B66A;
+    /* ----------------------------------------------------------------------
+       Paleta Stone / Inventario Visual
+       ---------------------------------------------------------------------- */
 
-    --ep-oak: #F1D6AA;
-    --ep-oak-light: #F9E8CC;
-    --ep-cream: #FFFDF7;
-    --ep-cream-2: #FFF8EC;
-    --ep-parchment: #FCF0DC;
-    --ep-parchment-2: #F8E7CB;
-    --ep-sand: #E9CDA5;
+    --ep-blue: #5CB9F2;
+    --ep-blue-2: #4BA4F2;
+    --ep-blue-dark: #247FBD;
+    --ep-blue-deep: #155F94;
+    --ep-blue-ice: #DCEAF2;
 
-    --ep-sage: #61724C;
-    --ep-sage-dark: #415136;
-    --ep-sage-light: #EEF4E7;
+    --ep-green: #04D94F;
+    --ep-green-dark: #047A31;
+    --ep-green-soft: rgba(4, 217, 79, 0.12);
 
-    --ep-redwood: #9A4A32;
-    --ep-amber: #C98228;
+    --ep-amber: #F2B705;
+    --ep-amber-dark: #8F6500;
+    --ep-amber-soft: rgba(242, 183, 5, 0.15);
 
-    --ep-text: #2A1A12;
-    --ep-text-strong: #4A2A18;
-    --ep-text-secondary: #92735A;
-    --ep-line: #EBD5B5;
+    --ep-red: #DC2626;
+    --ep-red-dark: #991B1B;
+    --ep-red-soft: #FEF2F2;
+
+    --ep-bg: #EEF8FE;
+    --ep-bg-2: #E6F4FC;
+    --ep-panel: #FFFFFF;
+    --ep-panel-soft: #F8FCFF;
+    --ep-panel-muted: #EDF7FD;
+
+    --ep-text: #0F172A;
+    --ep-text-strong: #155F94;
+    --ep-text-secondary: #60798C;
+    --ep-text-muted: #91A9B8;
+
+    --ep-line: #D7E8F2;
+    --ep-line-strong: #BDD7E8;
+
+    --ep-head: #0F172A;
+    --ep-head-2: #111827;
+
+    /* ----------------------------------------------------------------------
+       Alias legacy para no romper referencias anteriores del wizard
+       ---------------------------------------------------------------------- */
+
+    --ep-walnut: var(--ep-blue-deep);
+    --ep-walnut-dark: var(--ep-head);
+    --ep-cedar: var(--ep-blue-dark);
+    --ep-copper: var(--ep-blue-2);
+    --ep-caramel: var(--ep-blue);
+    --ep-honey: var(--ep-blue);
+
+    --ep-oak: var(--ep-blue-ice);
+    --ep-oak-light: var(--ep-panel-muted);
+    --ep-cream: var(--ep-panel);
+    --ep-cream-2: var(--ep-panel-soft);
+    --ep-parchment: var(--ep-panel-muted);
+    --ep-parchment-2: var(--ep-bg-2);
+    --ep-sand: var(--ep-line);
+
+    --ep-sage: var(--ep-green);
+    --ep-sage-dark: var(--ep-green-dark);
+    --ep-sage-light: #EAFBF1;
+
+    --ep-redwood: var(--ep-red);
 
     --ep-radius-xs: 10px;
     --ep-radius-sm: 14px;
     --ep-radius-md: 18px;
     --ep-radius-lg: 24px;
 
-    --ep-shadow-sm: 0 2px 8px rgba(74, 42, 24, 0.08);
-    --ep-shadow-md: 0 8px 22px rgba(74, 42, 24, 0.13);
-    --ep-shadow-lg: 0 22px 60px rgba(47, 27, 16, 0.24);
+    --ep-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --ep-shadow-sm: 0 4px 14px rgba(75, 164, 242, 0.09);
+    --ep-shadow-md: 0 12px 34px rgba(75, 164, 242, 0.14);
+    --ep-shadow-lg: 0 34px 90px rgba(15, 23, 42, 0.34), 0 8px 30px rgba(75, 164, 242, 0.12);
+    --ep-focus: 0 0 0 4px rgba(92, 185, 242, 0.18);
 }
 
 /* ==========================================================================
@@ -54,9 +93,9 @@
 
 .modal-content:has(.o_ep_wizard_shell) {
     overflow: hidden;
-    border: 1px solid rgba(122, 68, 36, 0.16);
+    border: 1px solid rgba(215, 232, 242, 0.96);
     border-radius: var(--ep-radius-lg);
-    background: var(--ep-cream);
+    background: var(--ep-panel);
     box-shadow: var(--ep-shadow-lg);
 }
 
@@ -67,7 +106,7 @@
 .modal-content:has(.o_ep_wizard_shell) > .modal-body {
     padding: 0 !important;
     overflow: hidden;
-    background: var(--ep-cream);
+    background: var(--ep-panel);
 }
 
 .o_dialog .o_ep_wizard_shell {
@@ -87,10 +126,13 @@
     flex-direction: column;
     overflow: hidden;
     color: var(--ep-text);
+    font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.01em;
     background:
-        radial-gradient(circle at 14% 0%, rgba(228, 182, 106, 0.18), transparent 34%),
-        radial-gradient(circle at 94% 6%, rgba(241, 214, 170, 0.42), transparent 36%),
-        linear-gradient(180deg, #ffffff 0%, var(--ep-cream) 46%, var(--ep-cream-2) 100%);
+        radial-gradient(circle at 14% 0%, rgba(92, 185, 242, 0.24), transparent 34%),
+        radial-gradient(circle at 94% 6%, rgba(75, 164, 242, 0.16), transparent 36%),
+        radial-gradient(circle at 74% 16%, rgba(4, 217, 79, 0.07), transparent 25%),
+        linear-gradient(180deg, #FBFDFF 0%, var(--ep-bg) 48%, var(--ep-bg-2) 100%);
 }
 
 /* ==========================================================================
@@ -107,14 +149,10 @@
     justify-content: space-between;
     gap: 18px;
     overflow: hidden;
-    border-bottom: 1px solid rgba(122, 68, 36, 0.14);
+    border-bottom: 1px solid rgba(215, 232, 242, 0.96);
     background:
-        linear-gradient(
-            135deg,
-            rgba(255, 253, 247, 0.98) 0%,
-            rgba(252, 240, 220, 0.98) 52%,
-            rgba(249, 232, 204, 0.98) 100%
-        );
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 252, 255, 0.94)),
+        linear-gradient(90deg, rgba(92, 185, 242, 0.12), rgba(220, 234, 242, 0.40));
 }
 
 .o_ep_dialog_header::before {
@@ -122,14 +160,13 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.11;
+    opacity: 0.16;
     background-image:
-        repeating-linear-gradient(
-            110deg,
-            rgba(122, 68, 36, 0.22) 0,
-            rgba(122, 68, 36, 0.22) 1px,
-            transparent 1px,
-            transparent 18px
+        linear-gradient(
+            120deg,
+            transparent 0 44%,
+            rgba(92, 185, 242, 0.22) 44% 45%,
+            transparent 45% 100%
         );
 }
 
@@ -145,8 +182,8 @@
     background:
         radial-gradient(
             circle,
-            rgba(228, 182, 106, 0.35) 0%,
-            rgba(228, 182, 106, 0.08) 54%,
+            rgba(92, 185, 242, 0.32) 0%,
+            rgba(92, 185, 242, 0.10) 54%,
             transparent 72%
         );
 }
@@ -168,11 +205,13 @@
     align-items: center;
     justify-content: center;
     border-radius: 20px;
-    color: var(--ep-walnut);
+    color: var(--ep-blue-dark);
     font-size: 1.9rem;
-    background: linear-gradient(135deg, var(--ep-oak-light), var(--ep-honey));
-    border: 1px solid rgba(167, 103, 53, 0.26);
-    box-shadow: 0 12px 26px rgba(167, 103, 53, 0.16);
+    background:
+        linear-gradient(145deg, rgba(92, 185, 242, 0.30), rgba(220, 234, 242, 0.62)),
+        #FFFFFF;
+    border: 1px solid rgba(92, 185, 242, 0.42);
+    box-shadow: 0 12px 26px rgba(92, 185, 242, 0.18);
 }
 
 .o_ep_header_text {
@@ -181,7 +220,7 @@
 
 .o_ep_dialog_header h2 {
     margin: 0 0 5px;
-    color: var(--ep-walnut);
+    color: var(--ep-text);
     font-size: 1.42rem;
     font-weight: 950;
     line-height: 1.08;
@@ -208,9 +247,9 @@
     justify-content: center;
     border-radius: 999px;
     cursor: pointer;
-    border: 1px solid rgba(122, 68, 36, 0.18);
-    background: rgba(255, 253, 247, 0.92);
-    color: var(--ep-cedar);
+    border: 1px solid rgba(92, 185, 242, 0.30);
+    background: rgba(255, 255, 255, 0.86);
+    color: var(--ep-blue-deep);
     font-size: 1.25rem;
     font-weight: 800;
     line-height: 1;
@@ -218,13 +257,15 @@
     transition:
         background 0.18s ease,
         color 0.18s ease,
+        border-color 0.18s ease,
         transform 0.18s ease,
         box-shadow 0.18s ease;
 }
 
 .o_ep_close_btn:hover {
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--ep-copper), var(--ep-cedar));
+    color: var(--ep-red-dark);
+    background: rgba(220, 38, 38, 0.10);
+    border-color: rgba(220, 38, 38, 0.28);
     transform: translateY(-1px);
     box-shadow: var(--ep-shadow-md);
 }
@@ -239,19 +280,29 @@
     gap: 8px;
     padding: 14px 20px;
     overflow-x: auto;
-    background: rgba(255, 248, 236, 0.94);
-    border-bottom: 1px solid rgba(122, 68, 36, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid rgba(215, 232, 242, 0.96);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
     scrollbar-width: thin;
-    scrollbar-color: rgba(122, 68, 36, 0.35) transparent;
+    scrollbar-color: rgba(92, 185, 242, 0.62) rgba(220, 234, 242, 0.62);
 }
 
 .o_ep_category_tabs::-webkit-scrollbar {
     height: 6px;
 }
 
+.o_ep_category_tabs::-webkit-scrollbar-track {
+    background: rgba(220, 234, 242, 0.60);
+    border-radius: 999px;
+}
+
 .o_ep_category_tabs::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(122, 68, 36, 0.28);
+    background: rgba(92, 185, 242, 0.60);
+}
+
+.o_ep_category_tabs::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 164, 242, 0.82);
 }
 
 .o_ep_tab {
@@ -262,8 +313,8 @@
     min-height: 38px;
     padding: 9px 15px;
     border-radius: 999px;
-    border: 1px solid rgba(122, 68, 36, 0.16);
-    background: rgba(255, 253, 247, 0.95);
+    border: 1px solid rgba(92, 185, 242, 0.30);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--ep-text-secondary);
     cursor: pointer;
     white-space: nowrap;
@@ -279,17 +330,18 @@
 }
 
 .o_ep_tab:hover {
-    color: var(--ep-walnut);
-    background: var(--ep-parchment);
-    border-color: rgba(167, 103, 53, 0.32);
+    color: var(--ep-blue-deep);
+    background: rgba(92, 185, 242, 0.14);
+    border-color: rgba(92, 185, 242, 0.52);
     transform: translateY(-1px);
+    box-shadow: var(--ep-shadow-sm);
 }
 
 .o_ep_tab.active {
-    color: #ffffff;
-    border-color: transparent;
-    background: linear-gradient(135deg, var(--ep-cedar), var(--ep-walnut));
-    box-shadow: 0 8px 18px rgba(74, 42, 24, 0.17);
+    color: #FFFFFF;
+    border-color: rgba(92, 185, 242, 0.70);
+    background: linear-gradient(180deg, var(--ep-blue), var(--ep-blue-2));
+    box-shadow: 0 10px 22px rgba(75, 164, 242, 0.20);
 }
 
 .o_ep_tab_count {
@@ -299,13 +351,15 @@
     text-align: center;
     font-size: 0.68rem;
     font-weight: 950;
-    color: var(--ep-cedar);
-    background: var(--ep-oak-light);
+    color: var(--ep-blue-deep);
+    background: rgba(92, 185, 242, 0.14);
+    border: 1px solid rgba(92, 185, 242, 0.22);
 }
 
 .o_ep_tab.active .o_ep_tab_count {
-    color: var(--ep-walnut);
-    background: rgba(255, 253, 247, 0.9);
+    color: var(--ep-blue-deep);
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(255, 255, 255, 0.34);
 }
 
 /* ==========================================================================
@@ -318,19 +372,28 @@
     overflow-y: auto;
     padding: 20px;
     background:
-        linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(255, 248, 236, 0.96)),
-        var(--ep-cream);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 252, 255, 0.96)),
+        var(--ep-panel);
     scrollbar-width: thin;
-    scrollbar-color: rgba(122, 68, 36, 0.34) transparent;
+    scrollbar-color: rgba(92, 185, 242, 0.62) rgba(220, 234, 242, 0.62);
 }
 
 .o_ep_products_body::-webkit-scrollbar {
     width: 7px;
 }
 
+.o_ep_products_body::-webkit-scrollbar-track {
+    background: rgba(220, 234, 242, 0.60);
+    border-radius: 999px;
+}
+
 .o_ep_products_body::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(122, 68, 36, 0.26);
+    background: rgba(92, 185, 242, 0.60);
+}
+
+.o_ep_products_body::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 164, 242, 0.82);
 }
 
 .o_ep_products_grid {
@@ -352,8 +415,10 @@
     cursor: pointer;
     user-select: none;
     border-radius: 20px;
-    border: 1px solid rgba(122, 68, 36, 0.14);
-    background: linear-gradient(180deg, #ffffff 0%, var(--ep-cream) 100%);
+    border: 1px solid rgba(215, 232, 242, 0.96);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 252, 255, 0.94)),
+        #FFFFFF;
     box-shadow: var(--ep-shadow-sm);
     transition:
         border-color 0.2s ease,
@@ -367,7 +432,7 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: 5px;
-    background: linear-gradient(180deg, var(--ep-honey), var(--ep-copper), var(--ep-cedar));
+    background: linear-gradient(180deg, var(--ep-blue), var(--ep-blue-2), var(--ep-blue-deep));
     opacity: 0;
     transition: opacity 0.2s ease;
     z-index: 2;
@@ -375,7 +440,7 @@
 
 .o_ep_product_card:hover:not(.already_in_order) {
     transform: translateY(-1px);
-    border-color: rgba(167, 103, 53, 0.38);
+    border-color: rgba(92, 185, 242, 0.52);
     box-shadow: var(--ep-shadow-md);
 }
 
@@ -385,15 +450,19 @@
 }
 
 .o_ep_product_card.selected {
-    border-color: rgba(122, 68, 36, 0.42);
-    background: linear-gradient(180deg, #ffffff 0%, var(--ep-cream-2) 100%);
-    box-shadow: 0 12px 30px rgba(74, 42, 24, 0.15);
+    border-color: rgba(92, 185, 242, 0.66);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(237, 247, 253, 0.96)),
+        #FFFFFF;
+    box-shadow: 0 12px 30px rgba(75, 164, 242, 0.16);
 }
 
 .o_ep_product_card.already_in_order {
     cursor: default;
-    border-color: rgba(97, 114, 76, 0.34);
-    background: linear-gradient(180deg, #ffffff 0%, var(--ep-sage-light) 100%);
+    border-color: rgba(4, 217, 79, 0.26);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(4, 217, 79, 0.08)),
+        #FFFFFF;
 }
 
 /* Imagen */
@@ -404,8 +473,10 @@
     aspect-ratio: 1 / 0.82;
     overflow: hidden;
     flex-shrink: 0;
-    background: linear-gradient(135deg, var(--ep-parchment), var(--ep-oak-light));
-    border-bottom: 1px solid rgba(122, 68, 36, 0.12);
+    background:
+        radial-gradient(circle at 35% 22%, rgba(255, 255, 255, 0.64), transparent 38%),
+        linear-gradient(135deg, rgba(92, 185, 242, 0.16), rgba(220, 234, 242, 0.74));
+    border-bottom: 1px solid rgba(215, 232, 242, 0.96);
 }
 
 .o_ep_product_img {
@@ -430,11 +501,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(122, 68, 36, 0.18);
+    color: rgba(21, 95, 148, 0.18);
     font-size: 3.4rem;
     background:
-        radial-gradient(circle at 38% 24%, rgba(228, 182, 106, 0.28), transparent 38%),
-        linear-gradient(135deg, var(--ep-parchment), var(--ep-oak-light));
+        radial-gradient(circle at 38% 24%, rgba(92, 185, 242, 0.28), transparent 38%),
+        linear-gradient(135deg, rgba(237, 247, 253, 0.98), rgba(220, 234, 242, 0.78));
     pointer-events: none;
 }
 
@@ -451,10 +522,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--ep-cedar), var(--ep-walnut));
-    border: 2px solid rgba(255, 253, 247, 0.92);
-    box-shadow: 0 8px 18px rgba(74, 42, 24, 0.24);
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--ep-blue), var(--ep-blue-2));
+    border: 2px solid rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 18px rgba(75, 164, 242, 0.24);
     font-size: 0.82rem;
     font-weight: 950;
     animation: epFadeScale 0.18s ease;
@@ -467,10 +538,10 @@
     z-index: 5;
     padding: 5px 10px;
     border-radius: 999px;
-    color: var(--ep-sage-dark);
-    background: rgba(238, 244, 231, 0.94);
-    border: 1px solid rgba(97, 114, 76, 0.34);
-    box-shadow: 0 6px 14px rgba(65, 81, 54, 0.12);
+    color: var(--ep-green-dark);
+    background: rgba(234, 251, 241, 0.94);
+    border: 1px solid rgba(4, 217, 79, 0.28);
+    box-shadow: 0 6px 14px rgba(4, 217, 79, 0.10);
     font-size: 0.62rem;
     font-weight: 950;
     letter-spacing: 0.08em;
@@ -490,9 +561,9 @@
     gap: 4px;
     padding: 6px 10px;
     border-radius: 999px;
-    background: rgba(255, 253, 247, 0.94);
-    border: 1px solid rgba(122, 68, 36, 0.20);
-    box-shadow: 0 10px 24px rgba(47, 27, 16, 0.18);
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(92, 185, 242, 0.30);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     animation: epFadeUp 0.18s ease;
@@ -504,8 +575,8 @@
     padding: 0;
     border: none;
     border-radius: 999px;
-    background: var(--ep-parchment);
-    color: var(--ep-cedar);
+    background: rgba(92, 185, 242, 0.14);
+    color: var(--ep-blue-deep);
     cursor: pointer;
     line-height: 1;
     font-size: 1rem;
@@ -513,13 +584,15 @@
     transition:
         background 0.16s ease,
         color 0.16s ease,
-        transform 0.16s ease;
+        transform 0.16s ease,
+        box-shadow 0.16s ease;
 }
 
 .o_ep_qty_btn:hover {
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--ep-copper), var(--ep-cedar));
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--ep-blue), var(--ep-blue-2));
     transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(75, 164, 242, 0.20);
 }
 
 .o_ep_qty_input {
@@ -528,7 +601,7 @@
     outline: none;
     text-align: center;
     background: transparent;
-    color: var(--ep-walnut);
+    color: var(--ep-blue-deep);
     font-size: 0.92rem;
     font-weight: 950;
     -moz-appearance: textfield;
@@ -555,9 +628,9 @@
     max-width: 100%;
     padding: 3px 9px;
     border-radius: 999px;
-    color: var(--ep-cedar);
-    background: var(--ep-parchment);
-    border: 1px solid rgba(122, 68, 36, 0.12);
+    color: var(--ep-blue-deep);
+    background: rgba(92, 185, 242, 0.12);
+    border: 1px solid rgba(92, 185, 242, 0.24);
     font-size: 0.60rem;
     font-weight: 950;
     letter-spacing: 0.09em;
@@ -569,20 +642,20 @@
 }
 
 .o_ep_product_card.selected .o_ep_product_categ {
-    color: var(--ep-walnut);
-    background: var(--ep-oak-light);
-    border-color: rgba(167, 103, 53, 0.22);
+    color: var(--ep-blue-deep);
+    background: rgba(92, 185, 242, 0.18);
+    border-color: rgba(92, 185, 242, 0.34);
 }
 
 .o_ep_product_card.already_in_order .o_ep_product_categ {
-    color: var(--ep-sage-dark);
-    background: var(--ep-sage-light);
-    border-color: rgba(97, 114, 76, 0.22);
+    color: var(--ep-green-dark);
+    background: var(--ep-green-soft);
+    border-color: rgba(4, 217, 79, 0.24);
 }
 
 .o_ep_product_name {
     min-height: 2.18em;
-    color: var(--ep-text-strong);
+    color: var(--ep-text);
     font-size: 0.88rem;
     font-weight: 900;
     line-height: 1.24;
@@ -613,7 +686,7 @@
 }
 
 .o_ep_product_price {
-    color: var(--ep-walnut);
+    color: var(--ep-blue-deep);
     font-size: 1.08rem;
     font-weight: 950;
     line-height: 1;
@@ -622,7 +695,7 @@
 
 .o_ep_currency {
     margin-right: 1px;
-    color: var(--ep-copper);
+    color: var(--ep-blue-dark);
     font-size: 0.72rem;
     font-weight: 950;
     vertical-align: super;
@@ -657,8 +730,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--ep-oak-light), var(--ep-parchment));
-    border: 1px solid rgba(122, 68, 36, 0.14);
+    color: var(--ep-blue-dark);
+    background:
+        linear-gradient(145deg, rgba(92, 185, 242, 0.22), rgba(220, 234, 242, 0.74)),
+        #FFFFFF;
+    border: 1px solid rgba(92, 185, 242, 0.28);
     box-shadow: var(--ep-shadow-sm);
     font-size: 2.4rem;
 }
@@ -684,9 +760,10 @@
     gap: 18px;
     padding: 13px 24px;
     background:
-        linear-gradient(135deg, rgba(238, 244, 231, 0.98), rgba(255, 253, 247, 0.98));
-    border-top: 1px solid rgba(97, 114, 76, 0.20);
-    box-shadow: 0 -8px 22px rgba(74, 42, 24, 0.06);
+        linear-gradient(135deg, rgba(4, 217, 79, 0.08), rgba(255, 255, 255, 0.98)),
+        #FFFFFF;
+    border-top: 1px solid rgba(4, 217, 79, 0.20);
+    box-shadow: 0 -8px 22px rgba(75, 164, 242, 0.06);
     animation: epFadeUp 0.18s ease;
 }
 
@@ -705,13 +782,13 @@
 }
 
 .o_ep_cart_items {
-    color: var(--ep-sage-dark);
+    color: var(--ep-green-dark);
     font-size: 0.92rem;
     font-weight: 900;
 }
 
 .o_ep_total_amount {
-    color: var(--ep-sage-dark);
+    color: var(--ep-green-dark);
     font-size: 1.28rem;
     font-weight: 950;
     text-align: right;
@@ -731,9 +808,9 @@
     gap: 16px;
     padding: 15px 24px 18px;
     background:
-        linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(255, 248, 236, 1));
-    border-top: 1px solid rgba(122, 68, 36, 0.16);
-    box-shadow: 0 -12px 28px rgba(74, 42, 24, 0.08);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 252, 255, 1));
+    border-top: 1px solid rgba(215, 232, 242, 0.96);
+    box-shadow: 0 -12px 28px rgba(75, 164, 242, 0.08);
 }
 
 .o_ep_action_hint {
@@ -764,7 +841,7 @@
     justify-content: center;
     gap: 7px;
     white-space: nowrap;
-    color: var(--ep-walnut);
+    color: var(--ep-blue-deep);
     font-size: 0.84rem;
     font-weight: 950;
     line-height: 1;
@@ -783,37 +860,38 @@
 }
 
 .o_ep_btn_skip {
-    color: var(--ep-cedar);
-    background: var(--ep-cream);
-    border: 1px solid rgba(122, 68, 36, 0.24);
+    color: var(--ep-blue-deep);
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(92, 185, 242, 0.42);
     box-shadow: var(--ep-shadow-sm);
 }
 
 .o_ep_btn_skip:hover {
-    color: var(--ep-walnut);
-    background: var(--ep-parchment);
-    border-color: rgba(167, 103, 53, 0.36);
+    color: var(--ep-blue-deep);
+    background: rgba(92, 185, 242, 0.14);
+    border-color: rgba(92, 185, 242, 0.68);
     transform: translateY(-1px);
     box-shadow: var(--ep-shadow-md);
 }
 
 .o_ep_btn_add {
     min-width: 190px;
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--ep-cedar) 0%, var(--ep-walnut) 100%);
-    box-shadow: 0 12px 24px rgba(74, 42, 24, 0.20);
+    color: #FFFFFF;
+    background: linear-gradient(180deg, var(--ep-blue), var(--ep-blue-2));
+    box-shadow: 0 12px 24px rgba(75, 164, 242, 0.22);
 }
 
 .o_ep_btn_add:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--ep-copper) 0%, var(--ep-cedar) 100%);
+    color: #FFFFFF;
+    background: linear-gradient(180deg, var(--ep-blue-2), var(--ep-blue-dark));
     transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(74, 42, 24, 0.24);
+    box-shadow: 0 14px 28px rgba(75, 164, 242, 0.28);
 }
 
 .o_ep_btn_add:disabled {
-    color: rgba(74, 42, 24, 0.48);
-    background: linear-gradient(135deg, rgba(241, 214, 170, 0.82), rgba(252, 240, 220, 0.92));
-    border: 1px solid rgba(122, 68, 36, 0.14);
+    color: rgba(96, 121, 140, 0.70);
+    background: linear-gradient(135deg, rgba(220, 234, 242, 0.82), rgba(248, 252, 255, 0.92));
+    border: 1px solid rgba(215, 232, 242, 0.96);
     cursor: not-allowed;
     opacity: 1;
     box-shadow: none;
@@ -836,25 +914,25 @@
     padding: 14px 18px;
     border-radius: 18px;
     color: var(--ep-text);
-    background: rgba(255, 253, 247, 0.98);
-    border: 1px solid rgba(122, 68, 36, 0.18);
-    box-shadow: 0 18px 46px rgba(47, 27, 16, 0.20);
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(215, 232, 242, 0.96);
+    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.18);
     font-size: 0.86rem;
     font-weight: 800;
     animation: epToastIn 0.24s ease;
 }
 
 .o_ep_toast.success {
-    border-left: 5px solid var(--ep-sage);
+    border-left: 5px solid var(--ep-green);
 }
 
 .o_ep_toast.info {
-    border-left: 5px solid var(--ep-copper);
+    border-left: 5px solid var(--ep-blue);
 }
 
 .o_ep_toast_icon {
     flex-shrink: 0;
-    color: var(--ep-cedar);
+    color: var(--ep-blue-dark);
     font-size: 1.05rem;
     font-weight: 950;
 }
@@ -870,7 +948,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(47, 27, 16, 0.38);
+    background:
+        radial-gradient(circle at 20% 10%, rgba(92, 185, 242, 0.24), transparent 28%),
+        radial-gradient(circle at 84% 0%, rgba(75, 164, 242, 0.18), transparent 36%),
+        rgba(15, 23, 42, 0.58);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     animation: epFadeIn 0.18s ease;
@@ -884,8 +965,8 @@
     flex-direction: column;
     overflow: hidden;
     border-radius: var(--ep-radius-lg);
-    background: var(--ep-cream);
-    border: 1px solid rgba(122, 68, 36, 0.16);
+    background: var(--ep-panel);
+    border: 1px solid rgba(215, 232, 242, 0.96);
     box-shadow: var(--ep-shadow-lg);
 }
 
