@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Sale Extra Products Wizard',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'summary': 'Pop-up inteligente para cotizar productos adicionales en SO',
     'description': """
         Muestra un pop-up elegante antes de confirmar o imprimir una Orden de Venta,

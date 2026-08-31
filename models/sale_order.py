@@ -65,7 +65,8 @@ class SaleOrder(models.Model):
 
         result = []
         for product in products:
-            tmpl = product.product_tmpl_id
+            # x_price_* son company_dependent: se leen con la compañía de la orden.
+            tmpl = product.product_tmpl_id.with_company(self.company_id)
 
             # Precio alto según moneda activa de la orden
             if currency_code == 'USD':
